@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Pool Game</title>
+    <style>
+      html, body, canvas {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+      }
+      canvas {
+        display: block;
+        border: 1px solid black;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="myCanvas"></canvas>
+    <script src="https://cdn.rawgit.com/schteppe/p2.js/v0.7.0/build/p2.js"></script>
+    <script>
+      const canvas = document.getElementById('myCanvas');
+      const ctx = canvas.getContext('2d');
+
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      // Create a new world in p2.js
+      const world = new p2.World({
+        gravity: [0, 0] // no gravity
+      });
+
+// Create a wall on the left side of the screen
+const wallShapeLeft = new p2.Box({
+  width: 1, // width of the wall
+  height: canvas.height, // height of the wall
+});
+const wallBodyLeft = new p2.Body({
+  mass: 0, // set mass to 0 so the wall doesn't move
+  position: [-0.5, canvas.height / 2], // set position to the left edge of the screen
+});
+wallBodyLeft.addShape(wallShapeLeft);
+world.addBody(wallBodyLeft);
+
+// Create a wall on the right side of the screen
+const wallShapeRight = new p2.Box({
+  width: 1, // width of the wall
+  height: canvas.height, // height of the wall
+});
+const wallBodyRight = new p2.Body({
+  mass: 0, // set mass to 0 so the wall doesn't move
+  position: [canvas.width + 0.5, canvas.height / 2], // set position to the right edge of the screen
+});
+wallBodyRight.addShape(wallShapeRight);
+world.addBody(wallBodyRight);
+
+// Create a wall on the top side of the screen
+const wallShapeTop = new p2.Box({
+  width: canvas.width, // width of the wall
+  height: 1, // height of the wall
+});
+const wallBodyTop = new p2.Body({
+  mass: 0, // set mass to 0 so the wall doesn't move
+  position: [canvas.width / 2, -0.5], // set position to the top edge of the screen
+});
+wallBodyTop.addShape(wallShapeTop);
+world.addBody(wallBodyTop);
+
+// Create a wall on the bottom side of the screen
+const wallShapeBottom = new p2.Box({
+  width: canvas.width, // width of the wall
+  height: 1, // height of the wall
+});
+const wallBodyBottom = new p2.Body({
+  mass: 0, // set mass to 0 so the wall doesn't move
+  position: [canvas.width / 2, canvas.height + 0.5], // set position to the bottom edge of the screen
+});
+wallBodyBottom.addShape(wallShapeBottom);
+world.addBody(wallBodyBottom);
+
+      function createBall(x, y, r, vx, vy, color) {
+        const ballShape = new p2.Circle({ radius: r });
+        const ballBody = new p2.Body({
+          mass: 10,
+          position: [x, y],
+          velocity: [vx, vy],
+        });
+        ballBody.addShape(ballShape);
+        ballBody.color = color;
+        world.addBody(ballBody);
+        return ballBody;
+      }
+
+     const balls = [];
+const maxBalls = 9000; // set the maximum number of balls
+const ballSize = 14;
+const dropInterval = 0.02; // declare dropInterval variable her
+const ballColors = ["#f0f0f0", "#ff0000", "#ff8c00", "#ffff00", "#000000", "#008000", "#0000ff", "#4b0082", "#00ffff", "#ff1493", "#00ff00", "#00bfff", "#9400d3", "#ff00ff", "#ff69b4", "#add8e6"];
+
+function getBallColor() {
+  return ballColors[Math.floor(Math.random() * ballColors.length)];
+}
+
+function dropBall() {
+  if (balls.length < maxBalls) { // check if the maximum number of balls is reached
+    balls.push(createBall(
+      Math.random() * canvas.width, // x
+      Math.random() * canvas.height, // y
+      ballSize, // r
+      0, // vx, set to 0 to make the balls stationary
+      0, // vy, set to 0 to make the balls stationary
+      getBallColor() // color
+    ));
+
+    setTimeout(dropBall, dropInterval);
+  }
+}
+
+      dropBall();
+
+      const cuestickShape = new p2.Box({
+        width: 80,
+        height: 16,
+      });
+
+      const cuestickBody = new p2.Body({
+        mass: 0,
+        position: [canvas.width / 2, canvas.height / 2],
+        angle: Math.PI / 2,
+      });
+  cuestickBody.addShape(cuestickShape);
+  world.addBody(cuestickBody);
+
+  const lineLength = canvas.width + canvas.height;
+  const errorHistory = [];
+  const pGain = 0.5;
+  const iGain = 0.01;
+  const dGain = 0.1;
+
+  let mouseX = canvas.width / 2;
+  let mouseY = canvas.height / 2;
+
+  canvas.addEventListener('mousemove', e => {
+    const canvasRect = canvas.getBoundingClientRect();
+    mouseX = e.clientX - canvasRect.left;
+    mouseY = e.clientY - canvasRect.top;
+  });
+
+  // Add a listener to the world's beginContact event, which is triggered when two bodies collide
+ world.on("beginContact", function(event) {
+  const bodyA = event.bodyA;
+  const bodyB = event.bodyB;
+  if (bodyA === cuestickBody || bodyB === cuestickBody) {
+    const ballBody = bodyA === cuestickBody ? bodyB : bodyA;
+    const ballVelocity = ballBody.velocity;
+    const ballMass = ballBody.mass;
+    const cuestickVelocity = cuestickBody.velocity;
+    const cuestickMass = cuestickBody.mass;
+    const contactPoint = event.contactPointA || event.contactPointB;
+
+    if (contactPoint) {
+      // Calculate the collision normal vector
+      const collisionNormal = [contactPoint.normalA[0], contactPoint.normalA[1]];
+
+      // Calculate the relative velocity between the ball and the cuestick
+      const relativeVelocity = [        ballVelocity[0] - cuestickVelocity[0],
+        ballVelocity[1] - cuestickVelocity[1]
+      ];
+
+      // Calculate the relative velocity along the collision normal vector
+      const relativeVelocityNormal = p2.vec2.dot(relativeVelocity, collisionNormal);
+
+      // Calculate the coefficient of restitution (i.e., elasticity) for the collision
+      const restitution = 0.25;
+
+      // Calculate the impulse (i.e., force over time) required to separate the ball and the cuestick
+      const impulse = 0;
+
+      // Apply the impulse to the ball and the cuestick
+      ballBody.applyImpulse([
+        impulse * collisionNormal[0],
+        impulse * collisionNormal[1]
+      ], contactPoint.worldA);
+    }
+  }
+});
+
+  function update() {
+    const dx = mouseX - cuestickBody.position[0];
+    const dy = mouseY - cuestickBody.position[1];
+    let angle = Math.atan2(dy, dx);
+
+    if (angle < 0) {
+      angle += 2 * Math.PI;
+    }
+
+    let error = angle - cuestickBody.angle;
+
+    if (error > Math.PI) {
+      error -= 2 * Math.PI;
+    } else if (error < -Math.PI) {
+      error += 2 * Math.PI;
+    }
+
+    errorHistory.push(error);
+
+    while (errorHistory.length > 12) {
+      errorHistory.shift();
+    }
+
+    let iTerm = 0;
+
+    for (let i = 0; i < errorHistory.length; i++) {
+      iTerm += iGain * errorHistory[i];
+    }
+
+    const deltaError = error - (errorHistory.length > 1 ? errorHistory[errorHistory.length - 2] : 0);
+    const deltaAngle = pGain * error + iTerm + dGain * deltaError;
+
+    cuestickBody.angle += deltaAngle;
+
+    cuestickBody.position[0] += (mouseX - cuestickBody.position[0]) * 0.12;
+    cuestickBody.position[1] += (mouseY - cuestickBody.position[1]) * 0.12;
+
+    // Step the physics world forward in time with a larger time step
+    world.step(1/200);
+
+    // Clear the canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw the cue stick
+    ctx.save();
+    ctx.translate(cuestickBody.position[0], cuestickBody.position[1]);
+    ctx.rotate(cuestickBody.angle);
+    ctx.fillStyle = '#000';
+    ctx.fillRect(-cuestickShape.width / 2, -cuestickShape.height / 2, cuestickShape.width, cuestickShape.height);
+
+    ctx.beginPath();
+    ctx.moveTo(cuestickShape.width / 2, 0);
+    ctx.lineTo(lineLength, 0);
+    ctx.strokeStyle = '#000';
+    ctx.stroke();
+
+    ctx.fillStyle = '#f00';
+    ctx.fillRect(cuestickShape.width / 2 - cuestickShape.height / 2, -cuestickShape.height / 2, cuestickShape.height, cuestickShape.height);
+
+    ctx.restore();
+
+    // Draw the balls
+    for (let i = 0; i < balls.length; i++) {
+      const ball = balls[i];
+      const position = ball.position;
+
+      // Draw the ball
+      ctx.fillStyle = ball.color;
+      ctx.beginPath();
+      ctx.arc(position[0], position[1], ball.shapes[0].radius, 0, Math.PI * 2, false);
+      ctx.fill();
+    }
+
+    requestAnimationFrame(update);
+  }
+
+  requestAnimationFrame(update);
+</script>
+  </body>
+</html>
