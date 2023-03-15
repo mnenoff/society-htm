@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Pool Game</title>
+    <style>
+      html, body, canvas {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+      }
+      canvas {
+        display: block;
+        border: 1px solid black;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="myCanvas"></canvas>
+    <script src="https://cdn.rawgit.com/schteppe/p2.js/v0.7.0/build/p2.js"></script>
+    <script>
+      const canvas = document.getElementById('myCanvas');
+      const ctx = canvas.getContext('2d');
+
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const world = new p2.World({
+        gravity: [0, 0]
+      });
+
+      const wallShapeLeft = new p2.Box({
+        width: 1,
+        height: canvas.height,
+      });
+      const wallBodyLeft = new p2.Body({
+        mass: 0,
+        position: [-0.5, canvas.height / 2],
+      });
+      wallBodyLeft.addShape(wallShapeLeft);
+      world.addBody(wallBodyLeft);
+
+      const wallShapeRight = new p2.Box({
+        width: 1,
+        height: canvas.height,
+      });
+      const wallBodyRight = new p2.Body({
+        mass: 0,
+        position: [canvas.width + 0.5, canvas.height / 2],
+      });
+      wallBodyRight.addShape(wallShapeRight);
+      world.addBody(wallBodyRight);
+
+      const wallShapeTop = new p2.Box({
+        width: canvas.width,
+        height: 1,
+      });
+      const wallBodyTop = new p2.Body({
+        mass: 0,
+        position: [canvas.width / 2, -0.5],
+      });
+      wallBodyTop.addShape(wallShapeTop);
+      world.addBody(wallBodyTop);
+
+      const wallShapeBottom = new p2.Box({
+        width: canvas.width,
+        height: 1,
+      });
+      const wallBodyBottom = new p2.Body({
+        mass: 0,
+        position: [canvas.width / 2, canvas.height + 0.5],
+      });
+      wallBodyBottom.addShape(wallShapeBottom);
+      world.addBody(wallBodyBottom);
+
+      function createBall(x, y, r, vx, vy, color, name) {
+        const ballShape = new p2.Circle({ radius: r });
+        const ballBody = new p2.Body({
+          mass: 10,
+          position: [x, y],
+          velocity: [vx, vy],
+        });
+        ballBody.addShape(ballShape);
+        ballBody.color = color;
+        ballBody.name = name;
+        world.addBody(ballBody);
+        return ballBody;
+      }
+
+      const tagBalls = [];
+      const maxBalls = 9000;
+      const ballSize = 14;
+      const dropInterval = 0.02;
+      const ballColors = ["#f0f0f0", "#ff0000", "#ff8c00", "#ffff00", "#000000", "#008000", "#0000ff", "#4b0082", "#00ffff", "#ff1493", "#00ff00", "#00bfff", "#9400d3", "#ff00ff", "#ff69b4", "#add8e6"];
+
+      function getBallColor() {
+        return ballColors[Math.floor(Math.random() * ballColors.length)];
+}
+
+function getRandomName() {
+  const names = ["Alpha", "Beta", "Gamma", "Delta", "Epsilon", "Zeta", "Eta", "Theta", "Iota", "Kappa", "Lambda", "Mu", "Nu", "Xi", "Omicron", "Pi", "Rho", "Sigma", "Tau", "Upsilon", "Phi", "Chi", "Psi", "Omega"];
+  return names[Math.floor(Math.random() * names.length)];
+}
+
+function dropBall() {
+  if (tagBalls.length < maxBalls) {
+    tagBalls.push(createBall(
+      Math.random() * canvas.width,
+      Math.random() * canvas.height,
+      ballSize,
+      0,
+      0,
+      getBallColor(),
+      getRandomName()
+    ));
+
+    setTimeout(dropBall, dropInterval);
+  }
+}
+
+dropBall();
+
+const cuestickShape = new p2.Box({
+  width: 80,
+  height: 16,
+});
+
+const cuestickBody = new p2.Body({
+  mass: 0,
+  position: [canvas.width / 2, canvas.height / 2],
+  angle: Math.PI / 2,
+});
+cuestickBody.addShape(cuestickShape);
+world.addBody(cuestickBody);
+
+const lineLength = canvas.width + canvas.height;
+const errorHistory = [];
+const pGain = 0.5;
+const iGain = 0.01;
+const dGain = 0.1;
+
+let mouseX = canvas.width / 2;
+let mouseY = canvas.height / 2;
+
+canvas.addEventListener('mousemove', e => {
+  const canvasRect = canvas.getBoundingClientRect();
+  mouseX = e.clientX - canvasRect.left;
+  mouseY = e.clientY - canvasRect.top;
+});
+
+world.on("beginContact", function(event) {
+  const bodyA = event.bodyA;
+  const bodyB = event.bodyB;
+  if (bodyA === cuestickBody || bodyB === cuestickBody) {
+    const ballBody = bodyA === cuestickBody ? bodyB : bodyA;
+    const ballVelocity = ballBody.velocity;
+    const ballMass = ballBody.mass;
+    const cuestickVelocity = cuestickBody.velocity;
+    const cuestickMass = cuestickBody.mass;
+    const contactPoint = event.contactPointA || event.contactPointB;
+
+    if (contactPoint) {
+      const collisionNormal = [contactPoint.normalA[0], contactPoint.normalA[1]];
+      const relativeVelocity = [        ballVelocity[0] - cuestickVelocity[0],
+        ballVelocity[1] - cuestickVelocity[1]
+      ];
+      const relativeVelocityNormal = p2.vec2.dot(relativeVelocity, collisionNormal);
+      const restitution = 0.25;
+      const impulse = 0;
+
+      ballBody.applyImpulse([
+        impulse * collisionNormal[0],
+        impulse * collisionNormal[1]
+      ], contactPoint.worldA);
+    }
+  }
+});
+
+function update() {
+  const dx = mouseX - cuestickBody.position[0];
+  const dy = mouseY - cuestickBody.position[1];
+  let angle = Math.atan2(dy, dx);
+
+  if (angle < 0) {
+    angle += 2 * Math.PI;
+  }
+
+  let error = angle - cuestickBody.angle;
+
+  if (error > Math.PI) {
+    error -= 2 * Math.PI;
+  } else if (error < -Math.PI) {
+    error += 2 * Math.PI;
+  }
+
+    errorHistory.push(error);
+    if (errorHistory.length > 100) {
+      errorHistory.shift();
+    }
+
+    const pTerm = error * pGain;
+    const iTerm = iGain * errorHistory.reduce((a, b) => a + b, 0);
+    const dTerm = dGain * (error - errorHistory[errorHistory.length - 2]);
+
+    const torque = pTerm + iTerm + dTerm;
+
+    cuestickBody.angularForce = torque;
+
+    world.step(1 / 60);
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (const body of world.bodies) {
+      if (body.shapes[0] instanceof p2.Circle) {
+        ctx.beginPath();
+        ctx.arc(body.position[0], body.position[1], body.shapes[0].radius, 0, 2 * Math.PI);
+        ctx.fillStyle = body.color;
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = "#000000";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.font = "12px Arial";
+        ctx.fillText(body.name, body.position[0], body.position[1]);
+      } else if (body.shapes[0] instanceof p2.Box) {
+        ctx.beginPath();
+        ctx.rect(
+          body.position[0] - body.shapes[0].width / 2,
+          body.position[1] - body.shapes[0].height / 2,
+          body.shapes[0].width,
+          body.shapes[0].height
+        );
+        ctx.stroke();
+      }
+    }
+
+    requestAnimationFrame(update);
+  }
+
+  update();
+</script>
+  </body>
+</html>
