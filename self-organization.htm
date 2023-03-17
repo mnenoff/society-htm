@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Pool Game</title>
+    <style>
+      html, body, canvas { margin: 0; padding: 0; width: 100%; height: 100%; }
+      canvas { display: block; border: 1px solid black; }
+    </style>
+  </head>
+  <body>
+    <canvas id="myCanvas"></canvas>
+    <script src="https://cdn.rawgit.com/schteppe/p2.js/v0.7.0/build/p2.js"></script>
+    <script>
+      const canvas = document.getElementById('myCanvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const world = new p2.World({ gravity: [0, 0] });
+      const balls = [];
+      const maxBalls = 2500, ballSize = 14;
+      const ballColors = ["#f5f5dc", "#ff0000", "#ff8c00", "#ffff00", "#000000", "#008000", "#0000ff", "#4b0082", "#00ffff", "#ff1493", "#00ff00", "#00bfff", "#9400d3", "#ff00ff", "#ff69b4", "#add8e6"];
+      const forceFactor = 0.5;
+      const interactionRadius = 100;
+      const interactionRadiusSquared = interactionRadius * interactionRadius;
+      const updateFrequency = 3;
+
+      const colorDiff = {
+  "#ff00ff": {
+    "#ff00ff": {
+      "dEcmc": 0,
+      "dE2000": 0
+    },
+    "#9400d3": {
+      "dEcmc": 12,
+      "dE2000": 22
+    },
+    "#ff69b4": {
+      "dEcmc": 20,
+      "dE2000": 16
+    },
+    "#ff1493": {
+      "dEcmc": 21,
+      "dE2000": 17
+    },
+    "#4b0082": {
+      "dEcmc": 22,
+      "dE2000": 37
+    },
+    "#0000ff": {
+      "dEcmc": 23,
+      "dE2000": 32
+    },
+    "#add8e6": {
+      "dEcmc": 40,
+      "dE2000": 54
+    },
+    "#000000": {
+      "dEcmc": 41,
+      "dE2000": 57
+    },
+    "#00bfff": {
+      "dEcmc": 43,
+      "dE2000": 68
+    },
+    "#f5f5dc": {
+      "dEcmc": 43,
+      "dE2000": 56
+    },
+    "#ff0000": {
+      "dEcmc": 51,
+      "dE2000": 43
+    },
+    "#ff8c00": {
+      "dEcmc": 59,
+      "dE2000": 58
+    },
+    "#00ffff": {
+      "dEcmc": 60,
+      "dE2000": 68
+    },
+    "#008000": {
+      "dEcmc": 73,
+      "dE2000": 97
+    },
+    "#ffff00": {
+      "dEcmc": 79,
+      "dE2000": 93
+    },
+    "#00ff00": {
+      "dEcmc": 94,
+      "dE2000": 111
+    }
+  },
+  "#9400d3": {
+    "#ff00ff": {
+      "dEcmc": 14,
+      "dE2000": 22
+    },
+    "#9400d3": {
+      "dEcmc": 0,
+      "dE2000": 0
+    },
+    "#ff69b4": {
+      "dEcmc": 27,
+      "dE2000": 32
+    },
+    "#ff1493": {
+      "dEcmc": 29,
+      "dE2000": 27
+    },
+    "#4b0082": {
+      "dEcmc": 13,
+      "dE2000": 16
+    },
+    "#0000ff": {
+      "dEcmc": 14,
+      "dE2000": 12
+    },
+    "#add8e6": {
+      "dEcmc": 42,
+      "dE2000": 58
+    },
+    "#000000": {
+      "dEcmc": 37,
+      "dE2000": 41
+    },
+    "#00bfff": {
+      "dEcmc": 42,
+      "dE2000": 63
+    },
+    "#f5f5dc": {
+      "dEcmc": 50,
+      "dE2000": 66
+    },
+    "#ff0000": {
+      "dEcmc": 60,
+      "dE2000": 46
+    },
+    "#ff8c00": {
+      "dEcmc": 66,
+      "dE2000": 65
+    },
+    "#00ffff": {
+      "dEcmc": 62,
+      "dE2000": 69
+    },
+    "#008000": {
+      "dEcmc": 75,
+      "dE2000": 92
+    },
+    "#ffff00": {
+      "dEcmc": 88,
+      "dE2000": 98
+    },
+    "#00ff00": {
+      "dEcmc": 99,
+      "dE2000": 113
+    }
+  },
+  "#ff69b4": {
+    "#ff00ff": {
+      "dEcmc": 24,
+      "dE2000": 16
+    },
+    "#9400d3": {
+      "dEcmc": 28,
+      "dE2000": 32
+    },
+    "#ff69b4": {
+      "dEcmc": 0,
+      "dE2000": 0
+    },
+    "#ff1493": {
+      "dEcmc": 9,
+      "dE2000": 10
+    },
+    "#4b0082": {
+      "dEcmc": 28,
+      "dE2000": 45
+    },
+    "#0000ff": {
+      "dEcmc": 44,
+      "dE2000": 43
+    },
+    "#add8e6": {
+      "dEcmc": 33,
+      "dE2000": 52
+    },
+    "#000000": {
+      "dEcmc": 34,
+      "dE2000": 59
+    },
+    "#00bfff": {
+      "dEcmc": 42,
+      "dE2000": 63
+    },
+    "#f5f5dc": {
+      "dEcmc": 32,
+      "dE2000": 46
+    },
+    "#ff0000": {
+      "dEcmc": 36,
+      "dE2000": 33
+    },
+    "#ff8c00": {
+      "dEcmc": 43,
+      "dE2000": 46
+    },
+    "#00ffff": {
+      "dEcmc": 55,
+      "dE2000": 75
+    },
+    "#008000": {
+      "dEcmc": 63,
+      "dE2000": 83
+    },
+    "#ffff00": {
+      "dEcmc": 66,
+      "dE2000": 76
+    },
+    "#00ff00": {
+      "dEcmc": 84,
+      "dE2000": 94
+    }
+  },
+  "#ff1493": {
+    "#ff00ff": {
+      "dEcmc": 23,
+      "dE2000": 17
+    },
+    "#9400d3": {
+      "dEcmc": 29,
+      "dE2000": 27
+    },
+    "#ff69b4": {
+      "dEcmc": 8,
+      "dE2000": 10
+    },
+    "#ff1493": {
+      "dEcmc": 0,
+      "dE2000": 0
+    },
+    "#4b0082": {
+      "dEcmc": 30,
+      "dE2000": 37
+    },
+    "#0000ff": {
+      "dEcmc": 44,
+      "dE2000": 37
+    },
+    "#add8e6": {
+      "dEcmc": 38,
+      "dE2000": 60
+    },
+    "#000000": {
+      "dEcmc": 36,
+      "dE2000": 51
+    },
+    "#00bfff": {
+      "dEcmc": 47,
+      "dE2000": 71
+    },
+    "#f5f5dc": {
+      "dEcmc": 37,
+      "dE2000": 52
+    },
+    "#ff0000": {
+      "dEcmc": 32,
+      "dE2000": 30
+    },
+    "#ff8c00": {
+      "dEcmc": 42,
+      "dE2000": 48
+    },
+    "#00ffff": {
+      "dEcmc": 60,
+      "dE2000": 87
+    },
+    "#008000": {
+      "dEcmc": 65,
+      "dE2000": 87
+    },
+    "#ffff00": {
+      "dEcmc": 67,
+      "dE2000": 82
+    },
+    "#00ff00": {
+      "dEcmc": 86,
+      "dE2000": 102
+    }
+  },
+  "#4b0082": {
+    "#ff00ff": {
+      "dEcmc": 37,
+      "dE2000": 37
+    },
+    "#9400d3": {
+      "dEcmc": 18,
+      "dE2000": 16
+    },
+    "#ff69b4": {
+      "dEcmc": 42,
+      "dE2000": 45
+    },
+    "#ff1493": {
+      "dEcmc": 40,
+      "dE2000": 37
+    },
+    "#4b0082": {
+      "dEcmc": 0,
+      "dE2000": 0
+    },
+    "#0000ff": {
+      "dEcmc": 23,
+      "dE2000": 15
+    },
+    "#add8e6": {
+      "dEcmc": 60,
+      "dE2000": 73
+    },
+    "#000000": {
+      "dEcmc": 30,
+      "dE2000": 31
+    },
+    "#00bfff": {
+      "dEcmc": 54,
+      "dE2000": 69
+    },
+    "#f5f5dc": {
+      "dEcmc": 71,
+      "dE2000": 82
+    },
+    "#ff0000": {
+      "dEcmc": 66,
+      "dE2000": 51
+    },
+    "#ff8c00": {
+      "dEcmc": 75,
+      "dE2000": 72
+    },
+    "#00ffff": {
+      "dEcmc": 78,
+      "dE2000": 82
+    },
+    "#008000": {
+      "dEcmc": 75,
+      "dE2000": 59
+    },
+    "#ffff00": {
+      "dEcmc": 102,
+      "dE2000": 105
+    },
+    "#00ff00": {
+      "dEcmc": 109,
+      "dE2000": 88
+    }
+  },
+  "#0000ff": {
+    "#ff00ff": {
+      "dEcmc": 26,
+      "dE2000": 32
+    },
+    "#9400d3": {
+      "dEcmc": 13,
+      "dE2000": 12
+    },
+    "#ff69b4": {
+      "dEcmc": 40,
+      "dE2000": 43
+    },
+    "#ff1493": {
+      "dEcmc": 42,
+      "dE2000": 37
+    },
+    "#4b0082": {
+      "dEcmc": 18,
+      "dE2000": 15
+    },
+    "#0000ff": {
+      "dEcmc": 0,
+      "dE2000": 0
+    },
+    "#add8e6": {
+      "dEcmc": 50,
+      "dE2000": 62
+    },
+    "#000000": {
+      "dEcmc": 41,
+      "dE2000": 40
+    },
+    "#00bfff": {
+      "dEcmc": 46,
+      "dE2000": 62
+    },
+    "#f5f5dc": {
+      "dEcmc": 60,
+      "dE2000": 74
+    },
+    "#ff0000": {
+      "dEcmc": 73,
+      "dE2000": 53
+    },
+    "#ff8c00": {
+      "dEcmc": 80,
+      "dE2000": 71
+    },
+    "#00ffff": {
+      "dEcmc": 70,
+      "dE2000": 71
+    },
+    "#008000": {
+      "dEcmc": 83,
+      "dE2000": 63
+    },
+    "#ffff00": {
+      "dEcmc": 101,
+      "dE2000": 103
+    },
+    "#00ff00": {
+      "dEcmc": 110,
+      "dE2000": 83
+    }
+  },
+  "#add8e6": {
+    "#ff00ff": {
+      "dEcmc": 92,
+      "dE2000": 54
+    },
+    "#9400d3": {
+      "dEcmc": 82,
+      "dE2000": 58
+    },
+    "#ff69b4": {
+      "dEcmc": 63,
+      "dE2000": 52
+    },
+    "#ff1493": {
+      "dEcmc": 78,
+      "dE2000": 60
+    },
+    "#4b0082": {
+      "dEcmc": 64,
+      "dE2000": 73
+    },
+    "#0000ff": {
+      "dEcmc": 99,
+      "dE2000": 62
+    },
+    "#add8e6": {
+      "dEcmc": 0,
+      "dE2000": 0
+    },
+    "#000000": {
+      "dEcmc": 32,
+      "dE2000": 77
+    },
+    "#00bfff": {
+      "dEcmc": 23,
+      "dE2000": 16
+    },
+    "#f5f5dc": {
+      "dEcmc": 23,
+      "dE2000": 21
+    },
+    "#ff0000": {
+      "dEcmc": 97,
+      "dE2000": 58
+    },
+    "#ff8c00": {
+      "dEcmc": 82,
+      "dE2000": 42
+    },
+    "#00ffff": {
+      "dEcmc": 27,
+      "dE2000": 17
+    },
+    "#008000": {
+      "dEcmc": 60,
+      "dE2000": 47
+    },
+    "#ffff00": {
+      "dEcmc": 85,
+      "dE2000": 42
+    },
+    "#00ff00": {
+      "dEcmc": 91,
+      "dE2000": 40
+    }
+  },
+  "#000000": {
+    "#ff00ff": {
+      "dEcmc": 191,
+      "dE2000": 57
+    },
+    "#9400d3": {
+      "dEcmc": 167,
+      "dE2000": 41
+    },
+    "#ff69b4": {
+      "dEcmc": 121,
+      "dE2000": 59
+    },
+    "#ff1493": {
+      "dEcmc": 144,
+      "dE2000": 51
+    },
+    "#4b0082": {
+      "dEcmc": 118,
+      "dE2000": 31
+    },
+    "#0000ff": {
+      "dEcmc": 212,
+      "dE2000": 40
+    },
+    "#add8e6": {
+      "dEcmc": 86,
+      "dE2000": 77
+    },
+    "#000000": {
+      "dEcmc": 0,
+      "dE2000": 0
+    },
+    "#00bfff": {
+      "dEcmc": 101,
+      "dE2000": 65
+    },
+    "#f5f5dc": {
+      "dEcmc": 96,
+      "dE2000": 95
+    },
+    "#ff0000": {
+      "dEcmc": 172,
+      "dE2000": 50
+    },
+    "#ff8c00": {
+      "dEcmc": 148,
+      "dE2000": 64
+    },
+    "#00ffff": {
+      "dEcmc": 119,
+      "dE2000": 91
+    },
+    "#008000": {
+      "dEcmc": 121,
+      "dE2000": 43
+    },
+    "#ffff00": {
+      "dEcmc": 179,
+      "dE2000": 101
+    },
+    "#00ff00": {
+      "dEcmc": 206,
+      "dE2000": 88
+    }
+  },
+  "#00bfff": {
+    "#ff00ff": {
+      "dEcmc": 64,
+      "dE2000": 68
+    },
+    "#9400d3": {
+      "dEcmc": 55,
+      "dE2000": 63
+    },
+    "#ff69b4": {
+      "dEcmc": 52,
+      "dE2000": 63
+    },
+    "#ff1493": {
+      "dEcmc": 63,
+      "dE2000": 71
+    },
+    "#4b0082": {
+      "dEcmc": 45,
+      "dE2000": 69
+    },
+    "#0000ff": {
+      "dEcmc": 60,
+      "dE2000": 62
+    },
+    "#add8e6": {
+      "dEcmc": 14,
+      "dE2000": 16
+    },
+    "#000000": {
+      "dEcmc": 33,
+      "dE2000": 65
+    },
+    "#00bfff": {
+      "dEcmc": 0,
+      "dE2000": 0
+    },
+    "#f5f5dc": {
+      "dEcmc": 32,
+      "dE2000": 38
+    },
+    "#ff0000": {
+      "dEcmc": 85,
+      "dE2000": 63
+    },
+    "#ff8c00": {
+      "dEcmc": 76,
+      "dE2000": 54
+    },
+    "#00ffff": {
+      "dEcmc": 26,
+      "dE2000": 24
+    },
+    "#008000": {
+      "dEcmc": 59,
+      "dE2000": 57
+    },
+    "#ffff00": {
+      "dEcmc": 78,
+      "dE2000": 64
+    },
+    "#00ff00": {
+      "dEcmc": 80,
+      "dE2000": 59
+    }
+  },
+  "#f5f5dc": {
+    "#ff00ff": {
+      "dEcmc": 110,
+      "dE2000": 56
+    },
+    "#9400d3": {
+      "dEcmc": 104,
+      "dE2000": 66
+    },
+    "#ff69b4": {
+      "dEcmc": 67,
+      "dE2000": 46
+    },
+    "#ff1493": {
+      "dEcmc": 81,
+      "dE2000": 52
+    },
+    "#4b0082": {
+      "dEcmc": 84,
+      "dE2000": 82
+    },
+    "#0000ff": {
+      "dEcmc": 128,
+      "dE2000": 74
+    },
+    "#add8e6": {
+      "dEcmc": 27,
+      "dE2000": 21
+    },
+    "#000000": {
+      "dEcmc": 34,
+      "dE2000": 95
+    },
+    "#00bfff": {
+      "dEcmc": 55,
+      "dE2000": 38
+    },
+    "#f5f5dc": {
+      "dEcmc": 0,
+      "dE2000": 0
+    },
+    "#ff0000": {
+      "dEcmc": 83,
+      "dE2000": 49
+    },
+    "#ff8c00": {
+      "dEcmc": 61,
+      "dE2000": 34
+    },
+    "#00ffff": {
+      "dEcmc": 47,
+      "dE2000": 27
+    },
+    "#008000": {
+      "dEcmc": 50,
+      "dE2000": 44
+    },
+    "#ffff00": {
+      "dEcmc": 63,
+      "dE2000": 24
+    },
+    "#00ff00": {
+      "dEcmc": 83,
+      "dE2000": 29
+    }
+  },
+  "#ff0000": {
+    "#ff00ff": {
+      "dEcmc": 81,
+      "dE2000": 43
+    },
+    "#9400d3": {
+      "dEcmc": 86,
+      "dE2000": 46
+    },
+    "#ff69b4": {
+      "dEcmc": 45,
+      "dE2000": 33
+    },
+    "#ff1493": {
+      "dEcmc": 44,
+      "dE2000": 30
+    },
+    "#4b0082": {
+      "dEcmc": 77,
+      "dE2000": 51
+    },
+    "#0000ff": {
+      "dEcmc": 109,
+      "dE2000": 53
+    },
+    "#add8e6": {
+      "dEcmc": 58,
+      "dE2000": 58
+    },
+    "#000000": {
+      "dEcmc": 38,
+      "dE2000": 50
+    },
+    "#00bfff": {
+      "dEcmc": 86,
+      "dE2000": 63
+    },
+    "#f5f5dc": {
+      "dEcmc": 42,
+      "dE2000": 49
+    },
+    "#ff0000": {
+      "dEcmc": 0,
+      "dE2000": 0
+    },
+    "#ff8c00": {
+      "dEcmc": 26,
+      "dE2000": 25
+    },
+    "#00ffff": {
+      "dEcmc": 91,
+      "dE2000": 71
+    },
+    "#008000": {
+      "dEcmc": 81,
+      "dE2000": 72
+    },
+    "#ffff00": {
+      "dEcmc": 68,
+      "dE2000": 64
+    },
+    "#00ff00": {
+      "dEcmc": 105,
+      "dE2000": 87
+    }
+  },
+  "#ff8c00": {
+    "#ff00ff": {
+      "dEcmc": 109,
+      "dE2000": 58
+    },
+    "#9400d3": {
+      "dEcmc": 112,
+      "dE2000": 65
+    },
+    "#ff69b4": {
+      "dEcmc": 66,
+      "dE2000": 46
+    },
+    "#ff1493": {
+      "dEcmc": 70,
+      "dE2000": 48
+    },
+    "#4b0082": {
+      "dEcmc": 98,
+      "dE2000": 72
+    },
+    "#0000ff": {
+      "dEcmc": 136,
+      "dE2000": 71
+    },
+    "#add8e6": {
+      "dEcmc": 58,
+      "dE2000": 42
+    },
+    "#000000": {
+      "dEcmc": 38,
+      "dE2000": 64
+    },
+    "#00bfff": {
+      "dEcmc": 93,
+      "dE2000": 54
+    },
+    "#f5f5dc": {
+      "dEcmc": 31,
+      "dE2000": 34
+    },
+    "#ff0000": {
+      "dEcmc": 30,
+      "dE2000": 25
+    },
+    "#ff8c00": {
+      "dEcmc": 0,
+      "dE2000": 0
+    },
+    "#00ffff": {
+      "dEcmc": 89,
+      "dE2000": 55
+    },
+    "#008000": {
+      "dEcmc": 68,
+      "dE2000": 54
+    },
+    "#ffff00": {
+      "dEcmc": 46,
+      "dE2000": 38
+    },
+    "#00ff00": {
+      "dEcmc": 89,
+      "dE2000": 58
+    }
+  },
+  "#00ffff": {
+    "#ff00ff": {
+      "dEcmc": 76,
+      "dE2000": 68
+    },
+    "#9400d3": {
+      "dEcmc": 70,
+      "dE2000": 69
+    },
+    "#ff69b4": {
+      "dEcmc": 58,
+      "dE2000": 75
+    },
+    "#ff1493": {
+      "dEcmc": 68,
+      "dE2000": 87
+    },
+    "#4b0082": {
+      "dEcmc": 60,
+      "dE2000": 82
+    },
+    "#0000ff": {
+      "dEcmc": 79,
+      "dE2000": 71
+    },
+    "#add8e6": {
+      "dEcmc": 16,
+      "dE2000": 17
+    },
+    "#000000": {
+      "dEcmc": 37,
+      "dE2000": 91
+    },
+    "#00bfff": {
+      "dEcmc": 22,
+      "dE2000": 24
+    },
+    "#f5f5dc": {
+      "dEcmc": 23,
+      "dE2000": 27
+    },
+    "#ff0000": {
+      "dEcmc": 77,
+      "dE2000": 71
+    },
+    "#ff8c00": {
+      "dEcmc": 63,
+      "dE2000": 55
+    },
+    "#00ffff": {
+      "dEcmc": 0,
+      "dE2000": 0
+    },
+    "#008000": {
+      "dEcmc": 36,
+      "dE2000": 46
+    },
+    "#ffff00": {
+      "dEcmc": 55,
+      "dE2000": 42
+    },
+    "#00ff00": {
+      "dEcmc": 48,
+      "dE2000": 35
+    }
+  },
+  "#008000": {
+    "#ff00ff": {
+      "dEcmc": 82,
+      "dE2000": 97
+    },
+    "#9400d3": {
+      "dEcmc": 77,
+      "dE2000": 92
+    },
+    "#ff69b4": {
+      "dEcmc": 58,
+      "dE2000": 83
+    },
+    "#ff1493": {
+      "dEcmc": 65,
+      "dE2000": 87
+    },
+    "#4b0082": {
+      "dEcmc": 66,
+      "dE2000": 59
+    },
+    "#0000ff": {
+      "dEcmc": 89,
+      "dE2000": 63
+    },
+    "#add8e6": {
+      "dEcmc": 33,
+      "dE2000": 47
+    },
+    "#000000": {
+      "dEcmc": 33,
+      "dE2000": 43
+    },
+    "#00bfff": {
+      "dEcmc": 45,
+      "dE2000": 57
+    },
+    "#f5f5dc": {
+      "dEcmc": 32,
+      "dE2000": 44
+    },
+    "#ff0000": {
+      "dEcmc": 58,
+      "dE2000": 72
+    },
+    "#ff8c00": {
+      "dEcmc": 42,
+      "dE2000": 54
+    },
+    "#00ffff": {
+      "dEcmc": 35,
+      "dE2000": 46
+    },
+    "#008000": {
+      "dEcmc": 0,
+      "dE2000": 0
+    },
+    "#ffff00": {
+      "dEcmc": 33,
+      "dE2000": 44
+    },
+    "#00ff00": {
+      "dEcmc": 26,
+      "dE2000": 35
+    }
+  },
+  "#ffff00": {
+    "#ff00ff": {
+      "dEcmc": 90,
+      "dE2000": 93
+    },
+    "#9400d3": {
+      "dEcmc": 89,
+      "dE2000": 98
+    },
+    "#ff69b4": {
+      "dEcmc": 61,
+      "dE2000": 76
+    },
+    "#ff1493": {
+      "dEcmc": 67,
+      "dE2000": 82
+    },
+    "#4b0082": {
+      "dEcmc": 79,
+      "dE2000": 105
+    },
+    "#0000ff": {
+      "dEcmc": 104,
+      "dE2000": 103
+    },
+    "#add8e6": {
+      "dEcmc": 40,
+      "dE2000": 42
+    },
+    "#000000": {
+      "dEcmc": 44,
+      "dE2000": 101
+    },
+    "#00bfff": {
+      "dEcmc": 60,
+      "dE2000": 64
+    },
+    "#f5f5dc": {
+      "dEcmc": 25,
+      "dE2000": 24
+    },
+    "#ff0000": {
+      "dEcmc": 50,
+      "dE2000": 64
+    },
+    "#ff8c00": {
+      "dEcmc": 29,
+      "dE2000": 38
+    },
+    "#00ffff": {
+      "dEcmc": 48,
+      "dE2000": 42
+    },
+    "#008000": {
+      "dEcmc": 29,
+      "dE2000": 44
+    },
+    "#ffff00": {
+      "dEcmc": 0,
+      "dE2000": 0
+    },
+    "#00ff00": {
+      "dEcmc": 29,
+      "dE2000": 23
+    }
+  },
+  "#00ff00": {
+    "#ff00ff": {
+      "dEcmc": 86,
+      "dE2000": 111
+    },
+    "#9400d3": {
+      "dEcmc": 84,
+      "dE2000": 113
+    },
+    "#ff69b4": {
+      "dEcmc": 64,
+      "dE2000": 94
+    },
+    "#ff1493": {
+      "dEcmc": 71,
+      "dE2000": 102
+    },
+    "#4b0082": {
+      "dEcmc": 74,
+      "dE2000": 88
+    },
+    "#0000ff": {
+      "dEcmc": 95,
+      "dE2000": 83
+    },
+    "#add8e6": {
+      "dEcmc": 37,
+      "dE2000": 40
+    },
+    "#000000": {
+      "dEcmc": 45,
+      "dE2000": 88
+    },
+    "#00bfff": {
+      "dEcmc": 50,
+      "dE2000": 59
+    },
+    "#f5f5dc": {
+      "dEcmc": 31,
+      "dE2000": 29
+    },
+    "#ff0000": {
+      "dEcmc": 62,
+      "dE2000": 87
+    },
+    "#ff8c00": {
+      "dEcmc": 45,
+      "dE2000": 58
+    },
+    "#00ffff": {
+      "dEcmc": 34,
+      "dE2000": 35
+    },
+    "#008000": {
+      "dEcmc": 20,
+      "dE2000": 35
+    },
+    "#ffff00": {
+      "dEcmc": 24,
+      "dE2000": 23
+    },
+    "#00ff00": {
+      "dEcmc": 0,
+      "dE2000": 0
+    }
+  }
+};
+
+      const colorPairsForce = {};
+
+      const calculateColorForces = () => {
+        for (let colorA in colorDiff) {
+          colorPairsForce[colorA] = {};
+          for (let colorB in colorDiff[colorA]) {
+            const dE2000 = colorDiff[colorA][colorB].dE2000;
+            const multiplier = dE2000 > 50 ? -(dE2000 - 50) / 50 : (50 - dE2000) / 50;
+            colorPairsForce[colorA][colorB] = multiplier;
+          }
+        }
+      };
+
+      calculateColorForces();
+
+      const createWall = (x, y, w, h) => {
+        const wall = new p2.Body({ mass: 0, position: [x, y] });
+        wall.addShape(new p2.Box({ width: w, height: h }));
+        world.addBody(wall);
+      };
+
+      const createBall = () => {
+        const ball = new p2.Body({
+          mass: 10,
+          position: [Math.random() * canvas.width, Math.random() * canvas.height],
+          velocity: [0, 0],
+        });
+        ball.addShape(new p2.Circle({ radius: ballSize }));
+        ball.color = ballColors[Math.floor(Math.random() * ballColors.length)];
+        world.addBody(ball);
+        balls.push(ball);
+      };
+
+      const dropBalls = () => {
+        if (balls.length < maxBalls) {
+          createBall();
+          requestAnimationFrame(dropBalls);
+        }
+      };
+
+      const interactionForce = (ballA, ballB) => {
+    const dx = ballB.position[0] - ballA.position[0];
+    const dy = ballB.position[1] - ballA.position[1];
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    const multiplier = colorPairsForce[ballA.color][ballB.color];
+    const forceX = (dx / distance) * multiplier * forceFactor;
+    const forceY = (dy / distance) * multiplier * forceFactor;
+
+    return [forceX, forceY];
+  };
+
+  let updateCount = 0;
+  const update = () => {
+    world.step(1 / 200);
+
+    if (updateCount % updateFrequency === 0) {
+      const numBalls = balls.length;
+      for (let i = 0; i < numBalls; i++) {
+        const ballA = balls[i];
+
+        for (let j = i + 1; j < numBalls; j++) {
+          const ballB = balls[j];
+
+          const dx = ballB.position[0] - ballA.position[0];
+          const dy = ballB.position[1] - ballA.position[1];
+          const distanceSquared = dx * dx + dy * dy;
+
+          if (distanceSquared < interactionRadiusSquared) {
+            const [forceX, forceY] = interactionForce(ballA, ballB);
+
+            ballA.velocity[0] += forceX;
+            ballA.velocity[1] += forceY;
+
+            ballB.velocity[0] -= forceX;
+            ballB.velocity[1] -= forceY;
+          }
+        }
+      }
+    }
+
+    updateCount++;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (let i = 0, len = balls.length; i < len; i++) {
+      const ball = balls[i];
+      ctx.fillStyle = ball.color;
+      ctx.beginPath();
+      ctx.arc(...ball.position, ball.shapes[0].radius, 0, Math.PI * 2);
+      ctx.fill();
+    };
+
+    requestAnimationFrame(update);
+  };
+
+  const wallPositions = [-0.5, canvas.width + 0.5];
+  for (let i = 0; i < wallPositions.length; i++) {
+    createWall(wallPositions[i], canvas.height / 2, 1, canvas.height);
+  }
+
+  const wallHeights = [-0.5, canvas.height + 0.5];
+  for (let i = 0; i < wallHeights.length; i++) {
+    createWall(canvas.width / 2, wallHeights[i], canvas.width, 1);
+  }
+
+  dropBalls();
+  requestAnimationFrame(update);
+    </script>
+  </body>
+</html>
