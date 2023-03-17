@@ -21,10 +21,10 @@
       const balls = [];
       const maxBalls = 2500, ballSize = 14;
       const ballColors = ["#f5f5dc", "#ff0000", "#ff8c00", "#ffff00", "#000000", "#008000", "#0000ff", "#4b0082", "#00ffff", "#ff1493", "#00ff00", "#00bfff", "#9400d3", "#ff00ff", "#ff69b4", "#add8e6"];
-      const forceFactor = 0.5;
+      const forceFactor = 50;
       const interactionRadius = 100;
       const interactionRadiusSquared = interactionRadius * interactionRadius;
-      const updateFrequency = 300;
+      const updateFrequency = 3;
 
       const colorDiff = {
   "#ff00ff": {
@@ -1128,11 +1128,11 @@
       const interactionForce = (ballA, ballB) => {
     const dx = ballB.position[0] - ballA.position[0];
     const dy = ballB.position[1] - ballA.position[1];
-    const distance = Math.sqrt(dx * dx + dy * dy);
+    const distanceSquared = dx * dx + dy * dy;
 
     const multiplier = colorPairsForce[ballA.color][ballB.color];
-    const forceX = (dx / distance) * multiplier * forceFactor;
-    const forceY = (dy / distance) * multiplier * forceFactor;
+    const forceX = (dx / distanceSquared) * multiplier * forceFactor;
+    const forceY = (dy / distanceSquared) * multiplier * forceFactor;
 
     return [forceX, forceY];
   };
