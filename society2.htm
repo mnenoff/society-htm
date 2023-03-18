@@ -265,11 +265,29 @@ document.addEventListener('keydown', (e) => {
       colorMetric = 'dE2000';
     }
     calculateColorForces();
-  } else if (e.key.toLowerCase() === 'r') { // The new case for the 'R' key
+  } else if (e.key.toLowerCase() === 'r') {
     for (let i = 0, len = balls.length; i < len; i++) {
       const ball = balls[i];
       ball.velocity[0] = -ball.velocity[0];
       ball.velocity[1] = -ball.velocity[1];
+    }
+  } else if (e.key.toLowerCase() === 'j') {
+    for (let i = 0, len = balls.length; i < len; i++) {
+      const ball = balls[i];
+      ball.velocity[0] = 0;
+      ball.velocity[1] = 0;
+    }
+  } else if (e.key.toLowerCase() === 'l') {
+    for (let i = 0, len = balls.length; i < len; i++) {
+      const ball = balls[i];
+      ball.velocity[0] = 2 * ball.velocity[0];
+      ball.velocity[1] = 2 * ball.velocity[1];
+    }
+  } else if (e.key.toLowerCase() === 'k') {
+    for (let i = 0, len = balls.length; i < len; i++) {
+      const ball = balls[i];
+      ball.velocity[0] = 0.5 * ball.velocity[0];
+      ball.velocity[1] = 0.5 * ball.velocity[1];
     }
   }
 });
