@@ -10,6 +10,7 @@
   </head>
   <body>
     <canvas id="myCanvas"></canvas>
+    <input type="file" id="file-input" style="display:none;">
     <script src="https://cdn.rawgit.com/schteppe/p2.js/v0.7.0/build/p2.js"></script>
     <script>
 const canvas = document.getElementById('myCanvas');
@@ -171,6 +172,38 @@ let randomColorMode = true;
 let lastTenBalls = [];
 let isMouseDown = false;
 
+function loadBallsFromFile(event) {
+  const file = event.target.files[0];
+
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      const ballData = JSON.parse(e.target.result);
+      loadBallsFromData(ballData);
+    };
+    reader.readAsText(file);
+  }
+}
+
+function loadBallsFromData(ballData) {
+  balls.forEach((ball) => {
+    world.removeBody(ball);
+  });
+  balls.length = 0;
+
+  ballData.forEach((data) => {
+    const ball = new p2.Body({
+      mass: 10,
+      position: data.position,
+      velocity: data.velocity,
+    });
+    ball.addShape(new p2.Circle({ radius: ballSize }));
+    ball.color = data.color;
+    world.addBody(ball);
+    balls.push(ball);
+  });
+}
+
 canvas.addEventListener('mousedown', (e) => {
   if (e.button === 0) {
     startPoint = { x: e.clientX, y: e.clientY };
@@ -253,6 +286,29 @@ const changeLastTenBallsColor = () => {
   }
 };
 
+const getBallData = () => {
+  const ballData = balls.map(ball => {
+    return {
+      position: [...ball.position],
+      color: ball.color,
+      velocity: [...ball.velocity]
+    };
+  });
+  return JSON.stringify(ballData, null, 2);
+};
+
+const saveBallDataToFile = () => {
+  const ballData = getBallData();
+  const blob = new Blob([ballData], {type: 'text/plain;charset=utf-8'});
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'ball-data.txt';
+  link.style.display = 'none';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
 setInterval(changeLastTenBallsColor, 50); // 22000 milliseconds = 22 seconds
 
 let intervalId;
@@ -263,6 +319,8 @@ document.addEventListener('keyup', (e) => {
     intervalId = null;
   }
 });
+
+document.getElementById('file-input').addEventListener('change', loadBallsFromFile);
 
 document.addEventListener('keydown', (e) => {
   if (e.key.toLowerCase() === 'i' && !intervalId) {
@@ -291,6 +349,8 @@ document.addEventListener('keydown', (e) => {
     randomColorMode = !randomColorMode;
   } else if (e.key.toLowerCase() === 'o') {
     colorInteractionEnabled = !colorInteractionEnabled;
+  } else if (e.key.toLowerCase() === 'w') {
+    document.getElementById('file-input').click();
   } else if (e.key.toLowerCase() === 'x') {
     if (colorMetric === 'dE2000') {
       colorMetric = 'dEcmc';
@@ -322,6 +382,8 @@ document.addEventListener('keydown', (e) => {
       ball.velocity[0] = 0.5 * ball.velocity[0];
       ball.velocity[1] = 0.5 * ball.velocity[1];
     }
+  } else if (e.key === 'p' || e.key === 'P') {
+    saveBallDataToFile();
   }
 });
 
