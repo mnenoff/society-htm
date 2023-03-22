@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Outlier Removal</title>
+    <style>
+        body {
+            font-family: Tahoma, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f2f5;
+        }
+    .container {
+        background-color: #ffffff;
+        padding: 2rem;
+        border-radius: 10px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+    }
+
+    h1 {
+        text-align: center;
+        margin-bottom: 1.5rem;
+        color: #333;
+    }
+
+    input {
+        display: block;
+        width: 100%;
+        margin-bottom: 20px;
+        padding: 10px;
+        font-size: 14px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+
+    button {
+        display: block;
+        width: 100%;
+        padding: 10px;
+        font-size: 14px;
+        font-weight: bold;
+        color: #fff;
+        background-color: #007bff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    button:hover {
+        background-color: #0056b3;
+    }
+</style>
+</head>
+<body>
+    <div class="container">
+        <h1>Outlier Removal</h1>
+        <input type="file" id="inputFile" accept=".txt">
+        <button onclick="filterData()">Filter and Export Balls</button>
+    </div>
+    <script>
+        let inputData = [];
+
+    document.getElementById('inputFile').addEventListener('change', function (event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                try {
+                    inputData = JSON.parse(e.target.result);
+                } catch (error) {
+                    alert('Invalid JSON data. Please check the input file.');
+                }
+            };
+            reader.readAsText(file);
+        }
+    });
+
+    function filterData() {
+        if (!inputData.length) {
+            alert('Please select a valid input file first.');
+            return;
+        }
+
+        const filteredData = inputData.filter(item => {
+            const x = item.position[0];
+            const y = item.position[1];
+            return x >= -5 && x <= 1920 && y >= -5 && y <= 940;
+        });
+
+        const jsonString = JSON.stringify(filteredData, null, 2);
+        const blob = new Blob([jsonString], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'filtered-data.txt';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+</script>
+</body>
+</html>
