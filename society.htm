@@ -150,6 +150,7 @@ const update = () => {
     ctx.beginPath();
     ctx.moveTo(startPoint.x, startPoint.y);
     ctx.lineTo(currentPoint.x, currentPoint.y);
+    ctx.strokeStyle = grayMask ? 'lightgrey' : 'black';
     ctx.stroke();
   }
 
@@ -242,19 +243,19 @@ currentPoint = { x: e.clientX, y: e.clientY };
 }
 });
 
-canvas.addEventListener('mouseup', (e) => {
-if (e.button === 0 && newBall && startPoint && currentPoint) {
-const dx = currentPoint.x - startPoint.x;
-const dy = currentPoint.y - startPoint.y;
-const velocityMultiplier = reverseDirection ? -48 / 3 : 48 / 3;
+window.addEventListener('mouseup', (e) => {
+  if (e.button === 0 && newBall && startPoint && currentPoint) {
+    const dx = currentPoint.x - startPoint.x;
+    const dy = currentPoint.y - startPoint.y;
+    const velocityMultiplier = reverseDirection ? -48 / 3 : 48 / 3;
 
-  newBall.velocity[0] = -dx * velocityMultiplier;
-  newBall.velocity[1] = -dy * velocityMultiplier;
+    newBall.velocity[0] = -dx * velocityMultiplier;
+    newBall.velocity[1] = -dy * velocityMultiplier;
 
-  newBall = null;
-  startPoint = null;
-  currentPoint = null;
-}
+    newBall = null;
+    startPoint = null;
+    currentPoint = null;
+  }
   isMouseDown = false;
 });
 
