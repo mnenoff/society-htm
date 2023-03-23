@@ -100,54 +100,60 @@ return [forceX, forceY];
 };
 
 let updateCount = 0;
+
 const update = () => {
-world.step(1 / 500);
+  world.step(1 / 500);
 
-if (colorInteractionEnabled && updateCount % updateFrequency === 0) {
-  const numBalls = balls.length;
-  for (let i = 0; i < numBalls; i++) {
-    const ballA = balls[i];
+  if (colorInteractionEnabled && updateCount % updateFrequency === 0) {
+    const numBalls = balls.length;
+    for (let i = 0; i < numBalls; i++) {
+      const ballA = balls[i];
 
-    for (let j = i + 1; j < numBalls; j++) {
-      const ballB = balls[j];
+      for (let j = i + 1; j < numBalls; j++) {
+        const ballB = balls[j];
 
-      const dx = ballB.position[0] - ballA.position[0];
-      const dy = ballB.position[1] - ballA.position[1];
-      const distanceSquared = dx * dx + dy * dy;
+        const dx = ballB.position[0] - ballA.position[0];
+        const dy = ballB.position[1] - ballA.position[1];
+        const distanceSquared = dx * dx + dy * dy;
 
-      if (distanceSquared < interactionRadiusSquared) {
-        const [forceX, forceY] = interactionForce(ballA, ballB);
+        if (distanceSquared < interactionRadiusSquared) {
+          const [forceX, forceY] = interactionForce(ballA, ballB);
 
-        ballA.velocity[0] += forceX;
-        ballA.velocity[1] += forceY;
+          ballA.velocity[0] += forceX;
+          ballA.velocity[1] += forceY;
 
-        ballB.velocity[0] -= forceX;
-        ballB.velocity[1] -= forceY;
+          ballB.velocity[0] -= forceX;
+          ballB.velocity[1] -= forceY;
+        }
       }
     }
   }
-}
 
-updateCount++;
+  updateCount++;
 
-ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-for (let i = 0, len = balls.length; i < len; i++) {
-  const ball = balls[i];
-  ctx.fillStyle = ball.color;
-  ctx.beginPath();
-  ctx.arc(...ball.position, ball.shapes[0].radius, 0, Math.PI * 2);
-  ctx.fill();
-};
+  if (grayMask) {
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
 
-if (newBall && startPoint && currentPoint) {
-  ctx.beginPath();
-  ctx.moveTo(startPoint.x, startPoint.y);
-  ctx.lineTo(currentPoint.x, currentPoint.y);
-  ctx.stroke();
-}
+  for (let i = 0, len = balls.length; i < len; i++) {
+    const ball = balls[i];
+    ctx.fillStyle = grayMask && ball.color !== "#f5f5dc" ? "#2f2f2f" : ball.color;
+    ctx.beginPath();
+    ctx.arc(...ball.position, ball.shapes[0].radius, 0, Math.PI * 2);
+    ctx.fill();
+  };
 
-requestAnimationFrame(update);
+  if (newBall && startPoint && currentPoint) {
+    ctx.beginPath();
+    ctx.moveTo(startPoint.x, startPoint.y);
+    ctx.lineTo(currentPoint.x, currentPoint.y);
+    ctx.stroke();
+  }
+
+  requestAnimationFrame(update);
 };
 
 const wallPositions = [-0.5, canvas.width + 0.5];
@@ -277,6 +283,7 @@ reverseDirection = !reverseDirection;
 });
 
 let autoChangeColor = false;
+let grayMask = false;
 
 const changeBallsColor = () => {
   if (balls.length > 0) {
@@ -394,6 +401,8 @@ document.addEventListener('keydown', (e) => {
     }
   } else if (e.key === 'p' || e.key === 'P') {
     saveBallDataToFile();
+  } else if (e.key.toLowerCase() === 'y') {
+    grayMask = !grayMask;
   }
 });
 
