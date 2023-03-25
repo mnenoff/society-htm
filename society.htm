@@ -226,6 +226,10 @@ function loadBallsFromData(ballData) {
   });
 }
 
+function handleMouseMove(e) {
+  currentPoint = { x: e.clientX, y: e.clientY };
+}
+
 canvas.addEventListener('mousedown', (e) => {
   if (e.button === 0) {
     startPoint = { x: e.clientX, y: e.clientY };
@@ -235,15 +239,17 @@ canvas.addEventListener('mousedown', (e) => {
       velocity: [0, 0],
     });
     newBall.addShape(new p2.Circle({ radius: ballSize }));
-    
+
     if (randomColorMode) {
       newBall.color = ballColors[Math.floor(Math.random() * ballColors.length)];
     } else {
       newBall.color = ballColors[newBallColorIndex];
     }
-    
+
     world.addBody(newBall);
     balls.push(newBall);
+
+    canvas.addEventListener('mousemove', handleMouseMove);
   }
   lastTenBalls.unshift(newBall);
   if (lastTenBalls.length > 10000) {
@@ -270,6 +276,8 @@ window.addEventListener('mouseup', (e) => {
     newBall = null;
     startPoint = null;
     currentPoint = null;
+
+    canvas.removeEventListener('mousemove', handleMouseMove);
   }
   isMouseDown = false;
 });
@@ -403,7 +411,7 @@ document.addEventListener('keydown', (e) => {
        clearInterval(intervalId);
        intervalId = null;
     }
- } else if (e.key.toLowerCase() === 'l') {
+  } else if (e.key.toLowerCase() === 'l') {
     for (let i = 0, len = balls.length; i < len; i++) {
       const ball = balls[i];
       ball.velocity[0] = 2 * ball.velocity[0];
