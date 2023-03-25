@@ -11,7 +11,8 @@
   <body>
     <canvas id="myCanvas"></canvas>
     <input type="file" id="file-input" style="display:none;">
-    <script src="https://cdn.rawgit.com/schteppe/p2.js/v0.7.0/build/p2.js"></script>
+    <script src="https://cdn.rawgit.com/schteppe/p2.js/v0.7.0/build/p2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3-quadtree@3"></script>
     <script>
 const canvas = document.getElementById('myCanvas');
 const ctx = canvas.getContext('2d');
@@ -20,7 +21,7 @@ canvas.height = window.innerHeight;
 
 const world = new p2.World({ gravity: [0, 0] });
 const balls = [];
-const maxBalls = 900, ballSize = 7;
+const maxBalls = 1500, ballSize = 7;
 const ballColors = ["#00bfff", "#add8e6", "#f5f5dc", "#ff8c00", "#ff1493", "#ff0000", "#ff69b4", "#ff00ff", "#0000ff", "#9400d3", "#4b0082", "#000000", "#008000", "#00ff00", "#ffff00", "#00ffff"];
 const forceFactor = 200;
 const interactionRadius = 50;
@@ -105,27 +106,41 @@ const update = () => {
   world.step(1 / 500);
 
   if (colorInteractionEnabled && updateCount % updateFrequency === 0) {
-    const numBalls = balls.length;
-    for (let i = 0; i < numBalls; i++) {
+ 
+    const quadtree = d3.quadtree()
+      .extent([[-1, -1], [canvas.width + 1, canvas.height + 1]])
+      .addAll(balls.map((ball, index) => [ball.position[0], ball.position[1], index]));
+
+    for (let i = 0; i < balls.length; i++) {
       const ballA = balls[i];
 
-      for (let j = i + 1; j < numBalls; j++) {
-        const ballB = balls[j];
+      quadtree.visit((node, x1, y1, x2, y2) => {
+        if (!node.length) {
+          do {
+            const nearbyBallIndex = node.data[2];
 
-        const dx = ballB.position[0] - ballA.position[0];
-        const dy = ballB.position[1] - ballA.position[1];
-        const distanceSquared = dx * dx + dy * dy;
+            if (nearbyBallIndex > i) {
+              const ballB = balls[nearbyBallIndex];
 
-        if (distanceSquared < interactionRadiusSquared) {
-          const [forceX, forceY] = interactionForce(ballA, ballB);
+              const dx = ballB.position[0] - ballA.position[0];
+              const dy = ballB.position[1] - ballA.position[1];
+              const distanceSquared = dx * dx + dy * dy;
 
-          ballA.velocity[0] += forceX;
-          ballA.velocity[1] += forceY;
+              if (distanceSquared < interactionRadiusSquared) {
+                const [forceX, forceY] = interactionForce(ballA, ballB);
 
-          ballB.velocity[0] -= forceX;
-          ballB.velocity[1] -= forceY;
+                ballA.velocity[0] += forceX;
+                ballA.velocity[1] += forceY;
+
+                ballB.velocity[0] -= forceX;
+                ballB.velocity[1] -= forceY;
+              }
+            }
+          } while (node = node.next);
         }
-      }
+
+        return x1 > ballA.position[0] + interactionRadius || x2 < ballA.position[0] - interactionRadius || y1 > ballA.position[1] + interactionRadius || y2 < ballA.position[1] - interactionRadius;
+      });
     }
   }
 
