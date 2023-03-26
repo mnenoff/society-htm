@@ -217,13 +217,34 @@ const update = () => {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
 
-  for (let i = 0, len = balls.length; i < len; i++) {
-    const ball = balls[i];
-    ctx.fillStyle = grayMask && ball.color !== "#f5f5dc" ? "#34342d" : ball.color;
-    ctx.beginPath();
-    ctx.arc(...ball.position, ball.shapes[0].radius, 0, Math.PI * 2);
-    ctx.fill();
-  };
+for (let i = 0, len = balls.length; i < len; i++) {
+  const ball = balls[i];
+  const colorIndex = ballColors.indexOf("#f5f5dc");
+  let fillColor;
+
+  if (grayMask) {
+    switch (ball.color) {
+      case ballColors[(colorIndex + 1) % 16]:
+        fillColor = "#979780";
+        break;
+      case ballColors[(colorIndex + 2) % 16]:
+        fillColor = "#5a5a50";
+        break;
+      case ballColors[(colorIndex + 3) % 16]:
+        fillColor = "#434339";
+        break;
+      default:
+        fillColor = ball.color !== "#f5f5dc" ? "#34342d" : ball.color;
+    }
+  } else {
+    fillColor = ball.color;
+  }
+
+  ctx.fillStyle = fillColor;
+  ctx.beginPath();
+  ctx.arc(...ball.position, ball.shapes[0].radius, 0, Math.PI * 2);
+  ctx.fill();
+};
 
   if (newBall && startPoint && currentPoint) {
     ctx.beginPath();
