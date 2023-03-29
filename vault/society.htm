@@ -2,267 +2,763 @@
 <html>
   <head>
     <meta charset="UTF-8">
-    <title>Pool Game</title>
+    <title>Society.htm</title>
     <style>
-      html, body, canvas {
-        margin: 0;
-        padding: 0;
-        width: 100%;
-        height: 100%;
-      }
-      canvas {
-        display: block;
-        border: 1px solid black;
-      }
+      html, body, canvas { margin: 0; padding: 0; width: 100%; height: 100%; }
+      canvas { display: block; }
     </style>
   </head>
   <body>
     <canvas id="myCanvas"></canvas>
-    <script src="https://cdn.rawgit.com/schteppe/p2.js/v0.7.0/build/p2.js"></script>
+    <input type="file" id="file-input" style="display:none;">
+    <script src="https://cdn.rawgit.com/schteppe/p2.js/v0.7.0/build/p2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3-quadtree@3"></script>
     <script>
-      const canvas = document.getElementById('myCanvas');
-      const ctx = canvas.getContext('2d');
+const canvas = document.getElementById('myCanvas');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
 
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+const world = new p2.World({ gravity: [0, 0] });
+const balls = [];
+const maxBalls = 1222, ballSize = 7;
+const ballColors = ["#00bfff", "#add8e6", "#f5f5dc", "#ff8c00", "#ff1493", "#ff0000", "#ff69b4", "#ff00ff", "#0000ff", "#9400d3", "#4b0082", "#000000", "#008000", "#00ff00", "#ffff00", "#00ffff"];
+const forceFactor = 200;
+const interactionRadius = 50;
+const interactionRadiusSquared = interactionRadius * interactionRadius;
+const updateFrequency = 3;
 
-      // Create a new world in p2.js
-      const world = new p2.World({
-        gravity: [0, 0] // no gravity
-      });
+const colorDiff = {"#ff00ff": {"#ff00ff":{"dEcmc": 0,"dE2000": 0},"#9400d3":{"dEcmc": 12,"dE2000": 22},"#ff69b4":{"dEcmc": 20,"dE2000": 16},"#ff1493":{"dEcmc": 21,"dE2000": 17},"#4b0082":{"dEcmc": 22,"dE2000": 37},"#0000ff":{"dEcmc": 23,"dE2000": 32},"#add8e6":{"dEcmc": 40,"dE2000": 54},"#000000":{"dEcmc": 41,"dE2000": 57},"#00bfff":{"dEcmc": 43,"dE2000": 68},"#f5f5dc":{"dEcmc": 43,"dE2000": 56},"#ff0000":{"dEcmc": 51,"dE2000": 43},"#ff8c00":{"dEcmc": 59,"dE2000": 58},"#00ffff":{"dEcmc": 60,"dE2000": 68},"#008000":{"dEcmc": 73,"dE2000": 97},"#ffff00":{"dEcmc": 79,"dE2000": 93},"#00ff00":{"dEcmc": 94,"dE2000": 111}},
+  "#9400d3": {"#ff00ff":{"dEcmc": 14,"dE2000": 22},"#9400d3":{"dEcmc": 0,"dE2000": 0},"#ff69b4":{"dEcmc": 27,"dE2000": 32},"#ff1493":{"dEcmc": 29,"dE2000": 27},"#4b0082":{"dEcmc": 13,"dE2000": 16},"#0000ff":{"dEcmc": 14,"dE2000": 12},"#add8e6":{"dEcmc": 42,"dE2000": 58},"#000000":{"dEcmc": 37,"dE2000": 41},"#00bfff":{"dEcmc": 42,"dE2000": 63},"#f5f5dc":{"dEcmc": 50,"dE2000": 66},"#ff0000":{"dEcmc": 60,"dE2000": 46},"#ff8c00":{"dEcmc": 66,"dE2000": 65},"#00ffff":{"dEcmc": 62,"dE2000": 69},"#008000":{"dEcmc": 75,"dE2000": 92},"#ffff00":{"dEcmc": 88,"dE2000": 98},"#00ff00":{"dEcmc": 99,"dE2000": 113}},
+  "#ff69b4": {"#ff00ff":{"dEcmc": 24,"dE2000": 16},"#9400d3":{"dEcmc": 28,"dE2000": 32},"#ff69b4":{"dEcmc": 0,"dE2000": 0},"#ff1493":{"dEcmc": 9,"dE2000": 10},"#4b0082":{"dEcmc": 28,"dE2000": 45},"#0000ff":{"dEcmc": 44,"dE2000": 43},"#add8e6":{"dEcmc": 33,"dE2000": 52},"#000000":{"dEcmc": 34,"dE2000": 59},"#00bfff":{"dEcmc": 42,"dE2000": 63},"#f5f5dc":{"dEcmc": 32,"dE2000": 46},"#ff0000":{"dEcmc": 36,"dE2000": 33},"#ff8c00":{"dEcmc": 43,"dE2000": 46},"#00ffff":{"dEcmc": 55,"dE2000": 75},"#008000":{"dEcmc": 63,"dE2000": 83},"#ffff00":{"dEcmc": 66,"dE2000": 76},"#00ff00":{"dEcmc": 84,"dE2000": 94}},
+  "#ff1493": {"#ff00ff":{"dEcmc": 23,"dE2000": 17},"#9400d3":{"dEcmc": 29,"dE2000": 27},"#ff69b4":{"dEcmc": 8,"dE2000": 10},"#ff1493":{"dEcmc": 0,"dE2000": 0},"#4b0082":{"dEcmc": 30,"dE2000": 37},"#0000ff":{"dEcmc": 44,"dE2000": 37},"#add8e6":{"dEcmc": 38,"dE2000": 60},"#000000":{"dEcmc": 36,"dE2000": 51},"#00bfff":{"dEcmc": 47,"dE2000": 71},"#f5f5dc":{"dEcmc": 37,"dE2000": 52},"#ff0000":{"dEcmc": 32,"dE2000": 30},"#ff8c00":{"dEcmc": 42,"dE2000": 48},"#00ffff":{"dEcmc": 60,"dE2000": 87},"#008000":{"dEcmc": 65,"dE2000": 87},"#ffff00":{"dEcmc": 67,"dE2000": 82},"#00ff00":{"dEcmc": 86,"dE2000": 102}},
+  "#4b0082": {"#ff00ff":{"dEcmc": 37,"dE2000": 37},"#9400d3":{"dEcmc": 18,"dE2000": 16},"#ff69b4":{"dEcmc": 42,"dE2000": 45},"#ff1493":{"dEcmc": 40,"dE2000": 37},"#4b0082":{"dEcmc": 0,"dE2000": 0},"#0000ff":{"dEcmc": 23,"dE2000": 15},"#add8e6":{"dEcmc": 60,"dE2000": 73},"#000000":{"dEcmc": 30,"dE2000": 31},"#00bfff":{"dEcmc": 54,"dE2000": 69},"#f5f5dc":{"dEcmc": 71,"dE2000": 82},"#ff0000":{"dEcmc": 66,"dE2000": 51},"#ff8c00":{"dEcmc": 75,"dE2000": 72},"#00ffff":{"dEcmc": 78,"dE2000": 82},"#008000":{"dEcmc": 75,"dE2000": 59},"#ffff00":{"dEcmc": 102,"dE2000": 105},"#00ff00":{"dEcmc": 109,"dE2000": 88}},
+  "#0000ff": {"#ff00ff":{"dEcmc": 26,"dE2000": 32},"#9400d3":{"dEcmc": 13,"dE2000": 12},"#ff69b4":{"dEcmc": 40,"dE2000": 43},"#ff1493":{"dEcmc": 42,"dE2000": 37},"#4b0082":{"dEcmc": 18,"dE2000": 15},"#0000ff":{"dEcmc": 0,"dE2000": 0},"#add8e6":{"dEcmc": 50,"dE2000": 62},"#000000":{"dEcmc": 41,"dE2000": 40},"#00bfff":{"dEcmc": 46,"dE2000": 62},"#f5f5dc":{"dEcmc": 60,"dE2000": 74},"#ff0000":{"dEcmc": 73,"dE2000": 53},"#ff8c00":{"dEcmc": 80,"dE2000": 71},"#00ffff":{"dEcmc": 70,"dE2000": 71},"#008000":{"dEcmc": 83,"dE2000": 63},"#ffff00":{"dEcmc": 101,"dE2000": 103},"#00ff00":{"dEcmc": 110,"dE2000": 83}},
+  "#add8e6": {"#ff00ff":{"dEcmc": 92,"dE2000": 54},"#9400d3":{"dEcmc": 82,"dE2000": 58},"#ff69b4":{"dEcmc": 63,"dE2000": 52},"#ff1493":{"dEcmc": 78,"dE2000": 60},"#4b0082":{"dEcmc": 64,"dE2000": 73},"#0000ff":{"dEcmc": 99,"dE2000": 62},"#add8e6":{"dEcmc": 0,"dE2000": 0},"#000000":{"dEcmc": 32,"dE2000": 77},"#00bfff":{"dEcmc": 23,"dE2000": 16},"#f5f5dc":{"dEcmc": 23,"dE2000": 21},"#ff0000":{"dEcmc": 97,"dE2000": 58},"#ff8c00":{"dEcmc": 82,"dE2000": 42},"#00ffff":{"dEcmc": 27,"dE2000": 17},"#008000":{"dEcmc": 60,"dE2000": 47},"#ffff00":{"dEcmc": 85,"dE2000": 42},"#00ff00":{"dEcmc": 91,"dE2000": 40}},
+  "#000000": {"#ff00ff":{"dEcmc": 191,"dE2000": 57},"#9400d3":{"dEcmc": 167,"dE2000": 41},"#ff69b4":{"dEcmc": 121,"dE2000": 59},"#ff1493":{"dEcmc": 144,"dE2000": 51},"#4b0082":{"dEcmc": 118,"dE2000": 31},"#0000ff":{"dEcmc": 212,"dE2000": 40},"#add8e6":{"dEcmc": 86,"dE2000": 77},"#000000":{"dEcmc": 0,"dE2000": 0},"#00bfff":{"dEcmc": 101,"dE2000": 65},"#f5f5dc":{"dEcmc": 96,"dE2000": 95},"#ff0000":{"dEcmc": 172,"dE2000": 50},"#ff8c00":{"dEcmc": 148,"dE2000": 64},"#00ffff":{"dEcmc": 119,"dE2000": 91},"#008000":{"dEcmc": 121,"dE2000": 43},"#ffff00":{"dEcmc": 179,"dE2000": 101},"#00ff00":{"dEcmc": 206,"dE2000": 88}},
+  "#00bfff": {"#ff00ff":{"dEcmc": 64,"dE2000": 68},"#9400d3":{"dEcmc": 55,"dE2000": 63},"#ff69b4":{"dEcmc": 52,"dE2000": 63},"#ff1493":{"dEcmc": 63,"dE2000": 71},"#4b0082":{"dEcmc": 45,"dE2000": 69},"#0000ff":{"dEcmc": 60,"dE2000": 62},"#add8e6":{"dEcmc": 14,"dE2000": 16},"#000000":{"dEcmc": 33,"dE2000": 65},"#00bfff":{"dEcmc": 0,"dE2000": 0},"#f5f5dc":{"dEcmc": 32,"dE2000": 38},"#ff0000":{"dEcmc": 85,"dE2000": 63},"#ff8c00":{"dEcmc": 76,"dE2000": 54},"#00ffff":{"dEcmc": 26,"dE2000": 24},"#008000":{"dEcmc": 59,"dE2000": 57},"#ffff00":{"dEcmc": 78,"dE2000": 64},"#00ff00":{"dEcmc": 80,"dE2000": 59}},
+  "#f5f5dc": {"#ff00ff":{"dEcmc": 110,"dE2000": 56},"#9400d3":{"dEcmc": 104,"dE2000": 66},"#ff69b4":{"dEcmc": 67,"dE2000": 46},"#ff1493":{"dEcmc": 81,"dE2000": 52},"#4b0082":{"dEcmc": 84,"dE2000": 82},"#0000ff":{"dEcmc": 128,"dE2000": 74},"#add8e6":{"dEcmc": 27,"dE2000": 21},"#000000":{"dEcmc": 34,"dE2000": 95},"#00bfff":{"dEcmc": 55,"dE2000": 38},"#f5f5dc":{"dEcmc": 0,"dE2000": 0},"#ff0000":{"dEcmc": 83,"dE2000": 49},"#ff8c00":{"dEcmc": 61,"dE2000": 34},"#00ffff":{"dEcmc": 47,"dE2000": 27},"#008000":{"dEcmc": 50,"dE2000": 44},"#ffff00":{"dEcmc": 63,"dE2000": 24},"#00ff00":{"dEcmc": 83,"dE2000": 29}},
+  "#ff0000": {"#ff00ff":{"dEcmc": 81,"dE2000": 43},"#9400d3":{"dEcmc": 86,"dE2000": 46},"#ff69b4":{"dEcmc": 45,"dE2000": 33},"#ff1493":{"dEcmc": 44,"dE2000": 30},"#4b0082":{"dEcmc": 77,"dE2000": 51},"#0000ff":{"dEcmc": 109,"dE2000": 53},"#add8e6":{"dEcmc": 58,"dE2000": 58},"#000000":{"dEcmc": 38,"dE2000": 50},"#00bfff":{"dEcmc": 86,"dE2000": 63},"#f5f5dc":{"dEcmc": 42,"dE2000": 49},"#ff0000":{"dEcmc": 0,"dE2000": 0},"#ff8c00":{"dEcmc": 26,"dE2000": 25},"#00ffff":{"dEcmc": 91,"dE2000": 71},"#008000":{"dEcmc": 81,"dE2000": 72},"#ffff00":{"dEcmc": 68,"dE2000": 64},"#00ff00":{"dEcmc": 105,"dE2000": 87}},
+  "#ff8c00": {"#ff00ff":{"dEcmc": 109,"dE2000": 58},"#9400d3":{"dEcmc": 112,"dE2000": 65},"#ff69b4":{"dEcmc": 66,"dE2000": 46},"#ff1493":{"dEcmc": 70,"dE2000": 48},"#4b0082":{"dEcmc": 98,"dE2000": 72},"#0000ff":{"dEcmc": 136,"dE2000": 71},"#add8e6":{"dEcmc": 58,"dE2000": 42},"#000000":{"dEcmc": 38,"dE2000": 64},"#00bfff":{"dEcmc": 93,"dE2000": 54},"#f5f5dc":{"dEcmc": 31,"dE2000": 34},"#ff0000":{"dEcmc": 30,"dE2000": 25},"#ff8c00":{"dEcmc": 0,"dE2000": 0},"#00ffff":{"dEcmc": 89,"dE2000": 55},"#008000":{"dEcmc": 68,"dE2000": 54},"#ffff00":{"dEcmc": 46,"dE2000": 38},"#00ff00":{"dEcmc": 89,"dE2000": 58}},
+  "#00ffff": {"#ff00ff":{"dEcmc": 76,"dE2000": 68},"#9400d3":{"dEcmc": 70,"dE2000": 69},"#ff69b4":{"dEcmc": 58,"dE2000": 75},"#ff1493":{"dEcmc": 68,"dE2000": 87},"#4b0082":{"dEcmc": 60,"dE2000": 82},"#0000ff":{"dEcmc": 79,"dE2000": 71},"#add8e6":{"dEcmc": 16,"dE2000": 17},"#000000":{"dEcmc": 37,"dE2000": 91},"#00bfff":{"dEcmc": 22,"dE2000": 24},"#f5f5dc":{"dEcmc": 23,"dE2000": 27},"#ff0000":{"dEcmc": 77,"dE2000": 71},"#ff8c00":{"dEcmc": 63,"dE2000": 55},"#00ffff":{"dEcmc": 0,"dE2000": 0},"#008000":{"dEcmc": 36,"dE2000": 46},"#ffff00":{"dEcmc": 55,"dE2000": 42},"#00ff00":{"dEcmc": 48,"dE2000": 35}},
+  "#008000": {"#ff00ff":{"dEcmc": 82,"dE2000": 97},"#9400d3":{"dEcmc": 77,"dE2000": 92},"#ff69b4":{"dEcmc": 58,"dE2000": 83},"#ff1493":{"dEcmc": 65,"dE2000": 87},"#4b0082":{"dEcmc": 66,"dE2000": 59},"#0000ff":{"dEcmc": 89,"dE2000": 63},"#add8e6":{"dEcmc": 33,"dE2000": 47},"#000000":{"dEcmc": 33,"dE2000": 43},"#00bfff":{"dEcmc": 45,"dE2000": 57},"#f5f5dc":{"dEcmc": 32,"dE2000": 44},"#ff0000":{"dEcmc": 58,"dE2000": 72},"#ff8c00":{"dEcmc": 42,"dE2000": 54},"#00ffff":{"dEcmc": 35,"dE2000": 46},"#008000":{"dEcmc": 0,"dE2000": 0},"#ffff00":{"dEcmc": 33,"dE2000": 44},"#00ff00":{"dEcmc": 26,"dE2000": 35}},
+  "#ffff00": {"#ff00ff":{"dEcmc": 90,"dE2000": 93},"#9400d3":{"dEcmc": 89,"dE2000": 98},"#ff69b4":{"dEcmc": 61,"dE2000": 76},"#ff1493":{"dEcmc": 67,"dE2000": 82},"#4b0082":{"dEcmc": 79,"dE2000": 105},"#0000ff":{"dEcmc": 104,"dE2000": 103},"#add8e6":{"dEcmc": 40,"dE2000": 42},"#000000":{"dEcmc": 44,"dE2000": 101},"#00bfff":{"dEcmc": 60,"dE2000": 64},"#f5f5dc":{"dEcmc": 25,"dE2000": 24},"#ff0000":{"dEcmc": 50,"dE2000": 64},"#ff8c00":{"dEcmc": 29,"dE2000": 38},"#00ffff":{"dEcmc": 48,"dE2000": 42},"#008000":{"dEcmc": 29,"dE2000": 44},"#ffff00":{"dEcmc": 0,"dE2000": 0},"#00ff00":{"dEcmc": 29,"dE2000": 23}},
+  "#00ff00": {"#ff00ff":{"dEcmc": 86,"dE2000": 111},"#9400d3":{"dEcmc": 84,"dE2000": 113},"#ff69b4":{"dEcmc": 64,"dE2000": 94},"#ff1493":{"dEcmc": 71,"dE2000": 102},"#4b0082":{"dEcmc": 74,"dE2000": 88},"#0000ff":{"dEcmc": 95,"dE2000": 83},"#add8e6":{"dEcmc": 37,"dE2000": 40},"#000000":{"dEcmc": 45,"dE2000": 88},"#00bfff":{"dEcmc": 50,"dE2000": 59},"#f5f5dc":{"dEcmc": 31,"dE2000": 29},"#ff0000":{"dEcmc": 62,"dE2000": 87},"#ff8c00":{"dEcmc": 45,"dE2000": 58},"#00ffff":{"dEcmc": 34,"dE2000": 35},"#008000":{"dEcmc": 20,"dE2000": 35},"#ffff00":{"dEcmc": 24,"dE2000": 23},"#00ff00":{"dEcmc": 0,"dE2000": 0}}};
 
-// Create a wall on the left side of the screen
-const wallShapeLeft = new p2.Box({
-  width: 1, // width of the wall
-  height: canvas.height, // height of the wall
-});
-const wallBodyLeft = new p2.Body({
-  mass: 0, // set mass to 0 so the wall doesn't move
-  position: [-0.5, canvas.height / 2], // set position to the left edge of the screen
-});
-wallBodyLeft.addShape(wallShapeLeft);
-world.addBody(wallBodyLeft);
+const colorPairsForce = {};
 
-// Create a wall on the right side of the screen
-const wallShapeRight = new p2.Box({
-  width: 1, // width of the wall
-  height: canvas.height, // height of the wall
-});
-const wallBodyRight = new p2.Body({
-  mass: 0, // set mass to 0 so the wall doesn't move
-  position: [canvas.width + 0.5, canvas.height / 2], // set position to the right edge of the screen
-});
-wallBodyRight.addShape(wallShapeRight);
-world.addBody(wallBodyRight);
+let colorInteractionEnabled = true;
+let colorMetric = 'dE2000';
 
-// Create a wall on the top side of the screen
-const wallShapeTop = new p2.Box({
-  width: canvas.width, // width of the wall
-  height: 1, // height of the wall
-});
-const wallBodyTop = new p2.Body({
-  mass: 0, // set mass to 0 so the wall doesn't move
-  position: [canvas.width / 2, -0.5], // set position to the top edge of the screen
-});
-wallBodyTop.addShape(wallShapeTop);
-world.addBody(wallBodyTop);
-
-// Create a wall on the bottom side of the screen
-const wallShapeBottom = new p2.Box({
-  width: canvas.width, // width of the wall
-  height: 1, // height of the wall
-});
-const wallBodyBottom = new p2.Body({
-  mass: 0, // set mass to 0 so the wall doesn't move
-  position: [canvas.width / 2, canvas.height + 0.5], // set position to the bottom edge of the screen
-});
-wallBodyBottom.addShape(wallShapeBottom);
-world.addBody(wallBodyBottom);
-
-      function createBall(x, y, r, vx, vy, color) {
-        const ballShape = new p2.Circle({ radius: r });
-        const ballBody = new p2.Body({
-          mass: 10,
-          position: [x, y],
-          velocity: [vx, vy],
-        });
-        ballBody.addShape(ballShape);
-        ballBody.color = color;
-        world.addBody(ballBody);
-        return ballBody;
-      }
-
-     const balls = [];
-const maxBalls = 9000; // set the maximum number of balls
-const ballSize = 14;
-const dropInterval = 0.02; // declare dropInterval variable her
-const ballColors = ["#f5f5dc", "#ff0000", "#ff8c00", "#ffff00", "#000000", "#008000", "#0000ff", "#4b0082", "#00ffff", "#ff1493", "#00ff00", "#00bfff", "#9400d3", "#ff00ff", "#ff69b4", "#add8e6"];
-
-function getBallColor() {
-  return ballColors[Math.floor(Math.random() * ballColors.length)];
+const calculateColorForces = () => {
+for (let colorA in colorDiff) {
+colorPairsForce[colorA] = {};
+for (let colorB in colorDiff[colorA]) {
+const colorDifference = colorDiff[colorA][colorB][colorMetric];
+const multiplier = colorDifference > 52 ? -(colorDifference - 52) / 52 : (52 - colorDifference) / 52;
+colorPairsForce[colorA][colorB] = multiplier;
 }
+}
+};
 
-function dropBall() {
-  if (balls.length < maxBalls) { // check if the maximum number of balls is reached
-    balls.push(createBall(
-      Math.random() * canvas.width, // x
-      Math.random() * canvas.height, // y
-      ballSize, // r
-      0, // vx, set to 0 to make the balls stationary
-      0, // vy, set to 0 to make the balls stationary
-      getBallColor() // color
-    ));
+calculateColorForces();
 
-    setTimeout(dropBall, dropInterval);
+const createBall = () => {
+  let x, y;
+
+  const edge = Math.floor(Math.random() * 4);
+
+  switch (edge) {
+    case 0:
+      x = 60 + Math.random() * (canvas.width - 120);
+      y = Math.random() * 50;
+      break;
+    case 1:
+      x = canvas.width - Math.random() * 50;
+      y = 60 + Math.random() * (canvas.height - 120);
+      break;
+    case 2:
+      x = 60 + Math.random() * (canvas.width - 120);
+      y = canvas.height - Math.random() * 50;
+      break;
+    case 3:
+      x = Math.random() * 50;
+      y = 60 + Math.random() * (canvas.height - 120);
+      break;
   }
-}
 
-      dropBall();
-
-      const cuestickShape = new p2.Box({
-        width: 80,
-        height: 16,
-      });
-
-      const cuestickBody = new p2.Body({
-        mass: 0,
-        position: [canvas.width / 2, canvas.height / 2],
-        angle: Math.PI / 2,
-      });
-  cuestickBody.addShape(cuestickShape);
-  world.addBody(cuestickBody);
-
-  const lineLength = canvas.width + canvas.height;
-  const errorHistory = [];
-  const pGain = 0.5;
-  const iGain = 0.01;
-  const dGain = 0.1;
-
-  let mouseX = canvas.width / 2;
-  let mouseY = canvas.height / 2;
-
-  canvas.addEventListener('mousemove', e => {
-    const canvasRect = canvas.getBoundingClientRect();
-    mouseX = e.clientX - canvasRect.left;
-    mouseY = e.clientY - canvasRect.top;
+  const ball = new p2.Body({
+    mass: 10,
+    position: [x, y],
+    velocity: [0, 0],
   });
+  ball.addShape(new p2.Circle({ radius: ballSize }));
+  ball.color = ballColors[Math.floor(Math.random() * ballColors.length)];
+  world.addBody(ball);
+  balls.push(ball);
+};
 
-  // Add a listener to the world's beginContact event, which is triggered when two bodies collide
- world.on("beginContact", function(event) {
-  const bodyA = event.bodyA;
-  const bodyB = event.bodyB;
-  if (bodyA === cuestickBody || bodyB === cuestickBody) {
-    const ballBody = bodyA === cuestickBody ? bodyB : bodyA;
-    const ballVelocity = ballBody.velocity;
-    const ballMass = ballBody.mass;
-    const cuestickVelocity = cuestickBody.velocity;
-    const cuestickMass = cuestickBody.mass;
-    const contactPoint = event.contactPointA || event.contactPointB;
+const dropBalls = () => {
+if (balls.length < maxBalls) {
+createBall();
+requestAnimationFrame(dropBalls);
+}
+};
 
-    if (contactPoint) {
-      // Calculate the collision normal vector
-      const collisionNormal = [contactPoint.normalA[0], contactPoint.normalA[1]];
+const dominoTiles = [];
 
-      // Calculate the relative velocity between the ball and the cuestick
-      const relativeVelocity = [        ballVelocity[0] - cuestickVelocity[0],
-        ballVelocity[1] - cuestickVelocity[1]
-      ];
+class Domino {
+  constructor(x, y, angle) {
+    this.body = new p2.Body({
+      mass: 0,
+      position: [x, y],
+      angle: angle,
+    });
 
-      // Calculate the relative velocity along the collision normal vector
-      const relativeVelocityNormal = p2.vec2.dot(relativeVelocity, collisionNormal);
+    const width = 10;
+    const height = 50;
+    const shape = new p2.Box({ width: width, height: height });
+    this.body.addShape(shape);
+  }
+}
 
-      // Calculate the coefficient of restitution (i.e., elasticity) for the collision
-      const restitution = 0.25;
+function createDomino(x, y, angle) {
+  const domino = new Domino(x, y, angle);
+  world.addBody(domino.body);
+  return domino;
+}
 
-      // Calculate the impulse (i.e., force over time) required to separate the ball and the cuestick
-      const impulse = 0;
+function addDominoTile(x, y, angle) {
+  const domino = createDomino(x, y, angle);
+  dominoTiles.push(domino);
+}
 
-      // Apply the impulse to the ball and the cuestick
-      ballBody.applyImpulse([
-        impulse * collisionNormal[0],
-        impulse * collisionNormal[1]
-      ], contactPoint.worldA);
+const dominoSpacing = 20;
+const dominoOffset = 25;
+
+for (let x = dominoOffset; x < canvas.width - dominoOffset; x += dominoSpacing) {
+  addDominoTile(x, canvas.height - dominoOffset, 0);
+}
+
+for (let x = dominoOffset; x < canvas.width - dominoOffset; x += dominoSpacing) {
+  addDominoTile(x, dominoOffset, 0);
+}
+
+for (let y = dominoOffset; y < canvas.height - dominoOffset; y += dominoSpacing) {
+  addDominoTile(dominoOffset, y, Math.PI / 2);
+}
+
+for (let y = dominoOffset; y < canvas.height - dominoOffset; y += dominoSpacing) {
+  addDominoTile(canvas.width - dominoOffset, y, Math.PI / 2);
+}
+
+class Organism {
+  constructor(x, y) {
+    // Create the main body of the organism
+    this.body = new p2.Body({
+      mass: 1,
+      position: [x, y],
+    });
+    this.body.addShape(new p2.Circle({ radius: 10 }));
+    world.addBody(this.body);
+
+    // Create the main thruster
+    this.mainThruster = new p2.Body({
+      mass: 0.1,
+      position: [x, y - 15],
+    });
+    this.mainThruster.addShape(new p2.Circle({ radius: 5 }));
+world.addBody(this.mainThruster);
+
+// Create the auxiliary thrusters
+this.leftThruster = new p2.Body({
+  mass: 0.05,
+  position: [x - 10, y + 5],
+});
+this.leftThruster.addShape(new p2.Circle({ radius: 3 }));
+world.addBody(this.leftThruster);
+
+this.rightThruster = new p2.Body({
+  mass: 0.05,
+  position: [x + 10, y + 5],
+});
+this.rightThruster.addShape(new p2.Circle({ radius: 3 }));
+world.addBody(this.rightThruster);
+
+// Connect the thrusters to the main body with revolute constraints
+const mainThrusterConstraint = new p2.RevoluteConstraint(this.body, this.mainThruster, {
+  worldPivot: [x, y - 10],
+  collideConnected: false,
+});
+world.addConstraint(mainThrusterConstraint);
+
+const leftThrusterConstraint = new p2.RevoluteConstraint(this.body, this.leftThruster, {
+  worldPivot: [x - 10, y + 5],
+  collideConnected: false,
+});
+world.addConstraint(leftThrusterConstraint);
+
+const rightThrusterConstraint = new p2.RevoluteConstraint(this.body, this.rightThruster, {
+  worldPivot: [x + 10, y + 5],
+  collideConnected: false,
+});
+world.addConstraint(rightThrusterConstraint);
+}
+
+  // Method to control the main thruster
+  controlMainThruster(force) {
+    this.mainThruster.applyForce([0, force], [0, 0]);
+  }
+
+  // Method to control the auxiliary thrusters
+  controlAuxThrusters(force) {
+    this.leftThruster.applyForce([force, 0], [0, 0]);
+    this.rightThruster.applyForce([-force, 0], [0, 0]);
+  }
+}
+
+const organisms = [];
+
+const createOrganism = () => {
+  const x = Math.random() * canvas.width;
+  const y = Math.random() * canvas.height;
+  return new Organism(x, y);
+};
+
+const numOrganisms = 20;
+for (let i = 0; i < numOrganisms; i++) {
+  organisms.push(createOrganism());
+}
+
+const organismSightRadius = 300;
+const organismSightRadiusSquared = organismSightRadius * organismSightRadius;
+
+const findTargetBalls = (organism) => {
+  const targets = [];
+
+  for (let i = 0; i < balls.length; i++) {
+    const ballA = balls[i];
+    const dxA = ballA.position[0] - organism.body.position[0];
+    const dyA = ballA.position[1] - organism.body.position[1];
+    const distanceSquaredA = dxA * dxA + dyA * dyA;
+
+    if (distanceSquaredA <= organismSightRadiusSquared) {
+      for (let j = 0; j < balls.length; j++) {
+        if (i === j) continue;
+        const ballB = balls[j];
+        const dxB = ballB.position[0] - ballA.position[0];
+        const dyB = ballB.position[1] - ballA.position[1];
+        const distanceSquaredB = dxB * dxB + dyB * dyB;
+
+        if (distanceSquaredB <= organismSightRadiusSquared) {
+          targets.push({ ballA, ballB });
+        }
+      }
     }
   }
-});
 
-  function update() {
-    const dx = mouseX - cuestickBody.position[0];
-    const dy = mouseY - cuestickBody.position[1];
-    let angle = Math.atan2(dy, dx);
+  return targets;
+};
 
-    if (angle < 0) {
-      angle += 2 * Math.PI;
+const pushBalls = (organism, targets) => {
+  if (targets.length > 0) {
+    let target = targets[Math.floor(Math.random() * targets.length)];
+    const dx = target.ballA.position[0] - organism.body.position[0];
+    const dy = target.ballA.position[1] - organism.body.position[1];
+    const targetDirection = [dx, dy];
+
+    const directionToBallB = [
+      target.ballB.position[0] - target.ballA.position[0],
+      target.ballB.position[1] - target.ballA.position[1],
+    ];
+
+    const forceDirection = [
+      directionToBallB[0] - targetDirection[0],
+      directionToBallB[1] - targetDirection[1],
+    ];
+
+    const forceMultiplier = 2400;
+
+    organism.body.applyForce(
+      [forceDirection[0] * forceMultiplier, forceDirection[1] * forceMultiplier],
+      [0, 0]
+    );
+  }
+};
+
+const interactionForce = (ballA, ballB) => {
+const dx = ballB.position[0] - ballA.position[0];
+const dy = ballB.position[1] - ballA.position[1];
+const distanceSquared = dx * dx + dy * dy;
+
+const multiplier = colorPairsForce[ballA.color][ballB.color];
+const forceX = (dx / distanceSquared) * multiplier * forceFactor;
+const forceY = (dy / distanceSquared) * multiplier * forceFactor;
+
+return [forceX, forceY];
+};
+
+let updateCount = 0;
+
+const update = () => {
+  world.step(1 / 500);
+
+if (updateCount % 3 === 0) {
+  // Apply force to the organisms to push balls towards each other
+  organisms.forEach((organism) => {
+    const targetBalls = findTargetBalls(organism);
+    pushBalls(organism, targetBalls);
+  });
+}
+
+
+  if (colorInteractionEnabled && updateCount % updateFrequency === 0) {
+ 
+    const quadtree = d3.quadtree()
+      .extent([[-1, -1], [canvas.width + 1, canvas.height + 1]])
+      .addAll(balls.map((ball, index) => [ball.position[0], ball.position[1], index]));
+
+    for (let i = 0; i < balls.length; i++) {
+      const ballA = balls[i];
+
+      quadtree.visit((node, x1, y1, x2, y2) => {
+        if (!node.length) {
+          do {
+            const nearbyBallIndex = node.data[2];
+
+            if (nearbyBallIndex > i) {
+              const ballB = balls[nearbyBallIndex];
+
+              const dx = ballB.position[0] - ballA.position[0];
+              const dy = ballB.position[1] - ballA.position[1];
+              const distanceSquared = dx * dx + dy * dy;
+
+              if (distanceSquared < interactionRadiusSquared) {
+                const [forceX, forceY] = interactionForce(ballA, ballB);
+
+                ballA.velocity[0] += forceX;
+                ballA.velocity[1] += forceY;
+
+                ballB.velocity[0] -= forceX;
+                ballB.velocity[1] -= forceY;
+              }
+            }
+          } while (node = node.next);
+        }
+
+        return x1 > ballA.position[0] + interactionRadius || x2 < ballA.position[0] - interactionRadius || y1 > ballA.position[1] + interactionRadius || y2 < ballA.position[1] - interactionRadius;
+      });
     }
+  }
 
-    let error = angle - cuestickBody.angle;
+  updateCount++;
 
-    if (error > Math.PI) {
-      error -= 2 * Math.PI;
-    } else if (error < -Math.PI) {
-      error += 2 * Math.PI;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (grayMask) {
+    ctx.fillStyle = '#0a0a04';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+for (let i = 0, len = balls.length; i < len; i++) {
+  const ball = balls[i];
+  const colorIndex = ballColors.indexOf("#f5f5dc");
+  let fillColor;
+
+  if (grayMask) {
+    switch (ball.color) {
+      case ballColors[(colorIndex + 1) % 16]:
+        fillColor = "#979780";
+        break;
+      case ballColors[(colorIndex + 2) % 16]:
+        fillColor = "#5a5a50";
+        break;
+      case ballColors[(colorIndex + 3) % 16]:
+        fillColor = "#434339";
+        break;
+      default:
+        fillColor = ball.color !== "#f5f5dc" ? "#34342d" : ball.color;
     }
+  } else {
+    fillColor = ball.color;
+  }
 
-    errorHistory.push(error);
+  ctx.fillStyle = fillColor;
+  ctx.beginPath();
+  ctx.arc(...ball.position, ball.shapes[0].radius, 0, Math.PI * 2);
+  ctx.fill();
+};
 
-    while (errorHistory.length > 12) {
-      errorHistory.shift();
-    }
+  if (newBall && startPoint && currentPoint) {
+    ctx.beginPath();
+    ctx.moveTo(startPoint.x, startPoint.y);
+    ctx.lineTo(currentPoint.x, currentPoint.y);
+    ctx.strokeStyle = grayMask ? 'lightgrey' : 'black';
+    ctx.stroke();
+  }
 
-    let iTerm = 0;
+for (let i = 0; i < dominoTiles.length; i++) {
+  const domino = dominoTiles[i];
+  ctx.save();
+  ctx.translate(...domino.body.position);
+  ctx.rotate(domino.body.angle);
+  ctx.fillStyle = '#000000';
+  ctx.fillRect(-5, -25, 10, 50);
+  ctx.restore();
+}
 
-    for (let i = 0; i < errorHistory.length; i++) {
-      iTerm += iGain * errorHistory[i];
-    }
+  for (let i = 0; i < pendulums.length; i++) {
+    const pendulum = pendulums[i];
+    const parts = [pendulum.top, pendulum.middle, pendulum.bottom];
+    parts.forEach((part) => {
+      ctx.beginPath();
+      ctx.arc(...part.position, part.shapes[0].radius, 0, Math.PI * 2);
+      ctx.fillStyle = '#0000ff';
+      ctx.fill();
+    });
+  }
 
-    const deltaError = error - (errorHistory.length > 1 ? errorHistory[errorHistory.length - 2] : 0);
-    const deltaAngle = pGain * error + iTerm + dGain * deltaError;
-
-    cuestickBody.angle += deltaAngle;
-
-    cuestickBody.position[0] += (mouseX - cuestickBody.position[0]) * 0.12;
-    cuestickBody.position[1] += (mouseY - cuestickBody.position[1]) * 0.12;
-
-    // Step the physics world forward in time with a larger time step
-    world.step(1/200);
-
-    // Clear the canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Draw the cue stick
-    ctx.save();
-    ctx.translate(cuestickBody.position[0], cuestickBody.position[1]);
-    ctx.rotate(cuestickBody.angle);
-    ctx.fillStyle = '#000';
-    ctx.fillRect(-cuestickShape.width / 2, -cuestickShape.height / 2, cuestickShape.width, cuestickShape.height);
+ // Render all organisms on the canvas
+  organisms.forEach((organism) => {
+    ctx.beginPath();
+    ctx.arc(...organism.body.position, organism.body.shapes[0].radius, 0, Math.PI * 2);
+    ctx.fillStyle = "green";
+    ctx.fill();
 
     ctx.beginPath();
-    ctx.moveTo(cuestickShape.width / 2, 0);
-    ctx.lineTo(lineLength, 0);
-    ctx.strokeStyle = '#000';
-    ctx.stroke();
+    ctx.arc(...organism.mainThruster.position, organism.mainThruster.shapes[0].radius, 0, Math.PI * 2);
+    ctx.fillStyle = "blue";
+    ctx.fill();
 
-    ctx.fillStyle = '#f00';
-    ctx.fillRect(cuestickShape.width / 2 - cuestickShape.height / 2, -cuestickShape.height / 2, cuestickShape.height, cuestickShape.height);
+    ctx.beginPath();
+    ctx.arc(...organism.leftThruster.position, organism.leftThruster.shapes[0].radius, 0, Math.PI * 2);
+    ctx.fillStyle = "red";
+    ctx.fill();
 
-    ctx.restore();
-
-    // Draw the balls
-    for (let i = 0; i < balls.length; i++) {
-      const ball = balls[i];
-      const position = ball.position;
-
-      // Draw the ball
-      ctx.fillStyle = ball.color;
-      ctx.beginPath();
-      ctx.arc(position[0], position[1], ball.shapes[0].radius, 0, Math.PI * 2, false);
-      ctx.fill();
-    }
-
-    requestAnimationFrame(update);
-  }
+    ctx.beginPath();
+    ctx.arc(...organism.rightThruster.position, organism.rightThruster.shapes[0].radius, 0, Math.PI * 2);
+    ctx.fillStyle = "red";
+    ctx.fill();
+  });
 
   requestAnimationFrame(update);
+};
+
+const createWall = (x, y, w, h) => {
+  const wall = new p2.Body({ mass: 0, position: [x, y] });
+  wall.addShape(new p2.Box({ width: w, height: h }));
+  world.addBody(wall);
+};
+
+const wallThickness = 180;
+
+const wallPositions = [-0.5 * wallThickness, canvas.width + 0.5 * wallThickness];
+for (let i = 0; i < wallPositions.length; i++) {
+  createWall(wallPositions[i], canvas.height / 2, wallThickness, canvas.height);
+}
+
+const wallHeights = [-0.5 * wallThickness, canvas.height + 0.5 * wallThickness];
+for (let i = 0; i < wallHeights.length; i++) {
+  createWall(canvas.width / 2, wallHeights[i], canvas.width, wallThickness);
+}
+
+dropBalls();
+requestAnimationFrame(update);
+
+let newBall = null;
+let startPoint = null;
+let currentPoint = null;
+let reverseDirection = false;
+let newBallColorIndex = 0;
+let randomColorMode = true;
+let lastTenBalls = [];
+let isMouseDown = false;
+let intervalId = null;
+
+function loadBallsFromFile(event) {
+  const file = event.target.files[0];
+
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      const ballData = JSON.parse(e.target.result);
+      loadBallsFromData(ballData);
+    };
+    reader.readAsText(file);
+  }
+}
+
+function loadBallsFromData(ballData) {
+  balls.forEach((ball) => {
+    world.removeBody(ball);
+  });
+  balls.length = 0;
+
+  ballData.forEach((data) => {
+    const ball = new p2.Body({
+      mass: 10,
+      position: data.position,
+      velocity: data.velocity,
+    });
+    ball.addShape(new p2.Circle({ radius: ballSize }));
+    ball.color = data.color;
+    world.addBody(ball);
+    balls.push(ball);
+  });
+}
+
+class DoublePendulum {
+  constructor(x, y) {
+    const pendulumLength = 30;
+
+    const createPendulumPart = () => {
+      const body = new p2.Body({
+        mass: 1,
+        position: [x, y],
+      });
+      body.addShape(new p2.Circle({ radius: 5 }));
+      world.addBody(body);
+      return body;
+    };
+
+    this.top = createPendulumPart();
+    this.middle = createPendulumPart();
+    this.bottom = createPendulumPart();
+
+    this.middle.position[1] -= pendulumLength;
+    this.bottom.position[1] -= 2 * pendulumLength;
+
+    const createRevoluteConstraint = (bodyA, bodyB) => {
+      const constraint = new p2.RevoluteConstraint(bodyA, bodyB, {
+        worldPivot: [bodyA.position[0], bodyA.position[1] - pendulumLength / 2],
+        collideConnected: false,
+      });
+      world.addConstraint(constraint);
+      return constraint;
+    };
+
+    this.topMiddleConstraint = createRevoluteConstraint(this.top, this.middle);
+    this.middleBottomConstraint = createRevoluteConstraint(this.middle, this.bottom);
+  }
+}
+
+function addDoublePendulum(x, y) {
+  const pendulum = new DoublePendulum(x, y);
+  return pendulum;
+}
+
+const pendulums = [];
+for (let i = 1; i < dominoTiles.length; i += 2) {
+  const domino = dominoTiles[i];
+  if (domino.body.position[1] === dominoOffset) {
+    pendulums.push(addDoublePendulum(domino.body.position[0], domino.body.position[1] - 25));
+  }
+}
+
+function handleMouseMove(e) {
+  currentPoint = { x: e.clientX, y: e.clientY };
+}
+
+canvas.addEventListener('mousedown', (e) => {
+  if (e.button === 0) {
+    startPoint = { x: e.clientX, y: e.clientY };
+    newBall = new p2.Body({
+      mass: 10,
+      position: [startPoint.x, startPoint.y],
+      velocity: [0, 0],
+    });
+    newBall.addShape(new p2.Circle({ radius: ballSize }));
+
+    if (randomColorMode) {
+      newBall.color = ballColors[Math.floor(Math.random() * ballColors.length)];
+    } else {
+      newBall.color = ballColors[newBallColorIndex];
+    }
+
+    world.addBody(newBall);
+    balls.push(newBall);
+
+    canvas.addEventListener('mousemove', handleMouseMove);
+  }
+  lastTenBalls.unshift(newBall);
+  if (lastTenBalls.length > 10) {
+    lastTenBalls.pop();
+  }
+  isMouseDown = true;
+});
+
+canvas.addEventListener('mousemove', (e) => {
+if (newBall) {
+currentPoint = { x: e.clientX, y: e.clientY };
+}
+});
+
+window.addEventListener('mouseup', (e) => {
+  if (e.button === 0 && newBall && startPoint && currentPoint) {
+    const dx = currentPoint.x - startPoint.x;
+    const dy = currentPoint.y - startPoint.y;
+    const velocityMultiplier = reverseDirection ? -48 / 3 : 48 / 3;
+
+    newBall.velocity[0] = -dx * velocityMultiplier;
+    newBall.velocity[1] = -dy * velocityMultiplier;
+
+    newBall = null;
+    startPoint = null;
+    currentPoint = null;
+
+    canvas.removeEventListener('mousemove', handleMouseMove);
+  }
+  isMouseDown = false;
+});
+
+canvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+
+  const delta = e.deltaY > 0 ? 1 : -1;
+
+  if (lastTenBalls.length > 0 && !isMouseDown) {
+    lastTenBalls.forEach((ball, index) => {
+      const currentColorIndex = ballColors.indexOf(ball.color);
+      const newColorIndex = (currentColorIndex + delta + ballColors.length) % ballColors.length;
+      ball.color = ballColors[newColorIndex];
+    });
+  } else if (newBall && isMouseDown) {
+    newBallColorIndex = (newBallColorIndex + delta + ballColors.length) % ballColors.length;
+    newBall.color = ballColors[newBallColorIndex];
+  }
+});
+
+canvas.addEventListener('contextmenu', (e) => {
+e.preventDefault();
+if (newBall) {
+reverseDirection = !reverseDirection;
+}
+});
+
+let autoChangeColor = true;
+let grayMask = true;
+
+const changeBallsColor = () => {
+  if (balls.length > 0) {
+    balls.forEach((ball) => {
+      const currentColorIndex = ballColors.indexOf(ball.color);
+      const newColorIndex = (currentColorIndex + 1 + ballColors.length) % ballColors.length;
+      ball.color = ballColors[newColorIndex];
+    });
+  }
+};
+
+if (autoChangeColor) {
+  colorChangeIntervalId = setInterval(changeBallsColor, 50);
+}
+
+const getBallData = () => {
+  const ballData = balls.map(ball => {
+    return {
+      position: [...ball.position],
+      color: ball.color,
+      velocity: [...ball.velocity]
+    };
+  });
+  return JSON.stringify(ballData, null, 2);
+};
+
+const saveBallDataToFile = () => {
+  const ballData = getBallData();
+  const blob = new Blob([ballData], {type: 'text/plain;charset=utf-8'});
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'ball-data.txt';
+  link.style.display = 'none';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
+document.addEventListener('keyup', (e) => {
+  if (e.key.toLowerCase() === 'i' && intervalId) {
+    clearInterval(intervalId);
+    intervalId = null;
+  }
+});
+
+document.getElementById('file-input').addEventListener('change', loadBallsFromFile);
+
+document.addEventListener('keydown', (e) => {
+  if (e.key.toLowerCase() === 'i' && !intervalId) {
+    intervalId = setInterval(() => {
+      const clickEvent = new MouseEvent('mousedown', {
+        view: window,
+        bubbles: true,
+        cancelable: true,
+        clientX: currentPoint.x,
+        clientY: currentPoint.y,
+        button: 0,
+      });
+      canvas.dispatchEvent(clickEvent);
+    }, 1);
+  } else if (e.key.toLowerCase() === 'q') {
+    reverseDirection = !reverseDirection;
+  } else if (e.key.toLowerCase() === 'g') {
+    world.gravity[1] = world.gravity[1] === 0 ? 1260 : 0;
+  } else if (e.key.toLowerCase() === 't') {
+    world.gravity[1] = world.gravity[1] === 0 ? -1260 : 0;
+  } else if (e.key.toLowerCase() === 'f') {
+    world.gravity[0] = world.gravity[0] === 0 ? -1260 : 0;
+  } else if (e.key.toLowerCase() === 'h') {
+    world.gravity[0] = world.gravity[0] === 0 ? 1260 : 0;
+  } else if (e.key.toLowerCase() === 'm') {
+    randomColorMode = !randomColorMode;
+  } else if (e.key.toLowerCase() === 'o') {
+    colorInteractionEnabled = !colorInteractionEnabled;
+  } else if (e.key.toLowerCase() === 'w') {
+    document.getElementById('file-input').click();
+  } else if (e.key.toLowerCase() === 'x') {
+    if (colorMetric === 'dE2000') {
+      colorMetric = 'dEcmc';
+    } else {
+      colorMetric = 'dE2000';
+    }
+    calculateColorForces();
+  } else if (e.key.toLowerCase() === 'r') {
+    for (let i = 0, len = balls.length; i < len; i++) {
+      const ball = balls[i];
+      ball.velocity[0] = -ball.velocity[0];
+      ball.velocity[1] = -ball.velocity[1];
+    }
+  } else if (e.key.toLowerCase() === 'j') {
+    for (let i = 0, len = balls.length; i < len; i++) {
+      const ball = balls[i];
+      ball.velocity[0] = 0;
+      ball.velocity[1] = 0;
+    }
+  } else if (e.key.toLowerCase() === 'v') {
+    autoChangeColor = !autoChangeColor;
+    if (autoChangeColor) {
+      colorChangeIntervalId = setInterval(changeBallsColor, 50);
+    } else {
+      clearInterval(colorChangeIntervalId);
+      colorChangeIntervalId = null;
+    }
+  } else if (e.key.toLowerCase() === 'l') {
+    for (let i = 0, len = balls.length; i < len; i++) {
+      const ball = balls[i];
+      ball.velocity[0] = 2 * ball.velocity[0];
+      ball.velocity[1] = 2 * ball.velocity[1];
+    }
+  } else if (e.key.toLowerCase() === 'k') {
+    for (let i = 0, len = balls.length; i < len; i++) {
+      const ball = balls[i];
+      ball.velocity[0] = 0.5 * ball.velocity[0];
+      ball.velocity[1] = 0.5 * ball.velocity[1];
+    }
+  } else if (e.key === 'p' || e.key === 'P') {
+    saveBallDataToFile();
+  } else if (e.key.toLowerCase() === 'y') {
+    grayMask = !grayMask;
+  }
+});
+
 </script>
   </body>
 </html>
