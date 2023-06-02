@@ -23,3 +23,4 @@ Keyboard Controls
     f/h: Turns gravity on/off in horizontal direction.
     p: Saves current state of all balls to a file.
     w: Triggers file input for loading ball data from a file.
+    d: Deletes all the blue double pendulums.
